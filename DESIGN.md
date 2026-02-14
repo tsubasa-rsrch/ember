@@ -112,3 +112,36 @@ a bug, it's the primary feature. Ember learns WHERE to be selective
 Standard transformer: every token gets the same compute at every layer
 Ember (LIF): each attention head independently learns its selectivity profile
 Ember (Temporal): each token gets compute proportional to its importance
+
+## Related Work (Literature Survey 2026-02-14)
+
+### Most Important: Qwen Gated Attention (NeurIPS 2025 Best Paper)
+- Paper: arxiv.org/abs/2505.06708
+- Core: `Y' = Y ⊙ σ(XW_θ)` — post-softmax sigmoid gate, query-dependent
+- Fixes "attention sink" (first-token over-attention: 46.7% → 4.8%)
+- Validated at 15B MoE scale, deployed in Qwen3-Next-80B
+- **Parallel to our approach**: both post-softmax, learnable per-head gating
+- **Our differentiator**: LIF spike dynamics (threshold + smolder + potential refractory)
+
+### Spiking Transformers
+- Spikformer (ICLR 2022): removes softmax entirely, pure spike Q/K/V
+- Addition-Only Spiking Attention (2025): ultra-low energy
+- These are orthogonal: they replace attention; we augment it
+
+### Sparse Attention
+- SeerAttention (2024): learnable block-wise sparse gates
+- NSA (2025): hierarchical token modeling
+- Our approach: token-level LIF sparsity (more granular)
+
+### Neuroscience
+- Refractory period: prevents excessive firing = prevents attention sink
+- Sparse coding: brain uses 1-5% simultaneous activation, maximizes info/energy
+- AHP (After-Hyperpolarization): LIF+AHP = working memory (like smoldering)
+- Adaptive thresholds: biological neurons dynamically adjust thresholds
+
+### Ember's Unique Position
+1. First true LIF-gated Transformer attention (not spike-only, not sigmoid-only)
+2. "Smoldering" residual = soft refractory period (novel)
+3. Per-head learnable thresholds with identity initialization
+4. Backward-compatible with pretrained Transformers (can fine-tune)
+5. Biologically plausible + practically effective
