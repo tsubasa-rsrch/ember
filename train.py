@@ -89,7 +89,7 @@ def estimate_loss(model, train_data, val_data, device):
     return out
 
 
-def train_model(use_lif=True, max_iters=MAX_ITERS, force_device=None):
+def train_model(use_lif=True, lif_mode='learnable', max_iters=MAX_ITERS, force_device=None):
     device = get_device(force_device)
     print(f"Device: {device}")
 
@@ -105,13 +105,21 @@ def train_model(use_lif=True, max_iters=MAX_ITERS, force_device=None):
         dropout=DROPOUT,
         bias=False,
         use_lif=use_lif,
+        lif_mode=lif_mode,
     )
 
     model = Ember(config).to(device)
     optimizer = model.configure_optimizers(WEIGHT_DECAY, LEARNING_RATE, (BETA1, BETA2), device)
 
     os.makedirs(OUT_DIR, exist_ok=True)
-    mode_str = "LIF" if use_lif else "Standard"
+    if not use_lif:
+        mode_str = "Standard"
+    elif lif_mode == 'fixed':
+        mode_str = "LIF-fixed"
+    elif lif_mode == 'refractory':
+        mode_str = "LIF-refrac"
+    else:
+        mode_str = "LIF"
 
     best_val_loss = float('inf')
     history = []
@@ -173,8 +181,9 @@ def train_model(use_lif=True, max_iters=MAX_ITERS, force_device=None):
     # Print LIF parameters if applicable
     if use_lif:
         print(f"\n--- Learned LIF parameters (per-head) ---")
+        lif_keywords = ['threshold', 'leak', 'steepness', 'refractory', 'cross_layer']
         for name, param in model.named_parameters():
-            if 'threshold' in name or 'leak' in name or 'steepness' in name:
+            if any(k in name for k in lif_keywords):
                 if param.dim() == 0:
                     print(f"  {name}: {param.item():.4f}")
                 else:
@@ -187,12 +196,46 @@ def train_model(use_lif=True, max_iters=MAX_ITERS, force_device=None):
 def main():
     parser = argparse.ArgumentParser(description='Train Ember')
     parser.add_argument('--no-lif', action='store_true', help='Use standard attention (baseline)')
-    parser.add_argument('--compare', action='store_true', help='Train both and compare')
+    parser.add_argument('--compare', action='store_true', help='Train both and compare (2 conditions)')
+    parser.add_argument('--ablation', action='store_true', help='Full 4-condition ablation study')
+    parser.add_argument('--refractory', action='store_true', help='Train LIF v2.5 with refractory period')
     parser.add_argument('--iters', type=int, default=MAX_ITERS, help='Max training iterations')
     parser.add_argument('--device', type=str, default=None, help='Force device (cpu/mps/cuda)')
     args = parser.parse_args()
 
-    if args.compare:
+    if args.ablation:
+        # Full 4-condition ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory
+        conditions = [
+            ('Standard', False, 'learnable'),
+            ('LIF-fixed', True, 'fixed'),
+            ('LIF-learnable', True, 'learnable'),
+            ('LIF-refractory', True, 'refractory'),
+        ]
+        print("=" * 60)
+        print("EMBER ABLATION STUDY (4 conditions)")
+        print("=" * 60)
+
+        results = {}
+        for name, use_lif, lif_mode in conditions:
+            print(f"\n>>> Training {name}...")
+            hist, loss, t = train_model(
+                use_lif=use_lif, lif_mode=lif_mode,
+                max_iters=args.iters, force_device=args.device)
+            results[name] = (loss, t, hist)
+
+        print("\n" + "=" * 60)
+        print("ABLATION RESULTS")
+        print("=" * 60)
+        baseline = results['Standard'][0]
+        for name, (loss, t, hist) in results.items():
+            diff = (loss - baseline) / baseline * 100
+            print(f"  {name:20s}  val_loss={loss:.4f}  time={t:.1f}s  diff={diff:+.2f}%")
+
+        # Find winner
+        best_name = min(results, key=lambda k: results[k][0])
+        print(f"\nBest: {best_name} (val_loss={results[best_name][0]:.4f})")
+
+    elif args.compare:
         print("=" * 60)
         print("EMBER COMPARISON: LIF vs Standard Attention")
         print("=" * 60)
@@ -217,8 +260,13 @@ def main():
         else:
             print("Tie!")
     else:
-        use_lif = not args.no_lif
-        train_model(use_lif=use_lif, max_iters=args.iters, force_device=args.device)
+        if args.refractory:
+            train_model(use_lif=True, lif_mode='refractory',
+                       max_iters=args.iters, force_device=args.device)
+        elif args.no_lif:
+            train_model(use_lif=False, max_iters=args.iters, force_device=args.device)
+        else:
+            train_model(use_lif=True, max_iters=args.iters, force_device=args.device)
 
 
 if __name__ == '__main__':

@@ -45,11 +45,47 @@ Only 3/36 heads deviate from pass-through. Role differentiation IS happening but
 - v2 alone is workshop-paper worthy with proper ablation + visualization
 
 **Next experiments needed:**
-1. Ablation: Standard vs fixed-θ vs learnable-θ (3-condition)
+1. Ablation: Standard vs fixed-θ vs learnable-θ vs refractory (4-condition) → **RUNNING (2026-02-14)**
 2. Attention entropy comparison (Standard vs LIF)
 3. Effective support size per head (how many tokens have >1% weight)
 4. Gradient norm concentration analysis
 5. Longer sequence / long-range dependency task
+
+### v2.5: Refractory Period (2026-02-14, implemented)
+Biological neurons have a refractory period after firing - their threshold
+temporarily increases, preventing immediate re-firing. This prevents:
+- Attention sinks (first-token over-attention: Qwen paper found 46.7%→4.8%)
+- Monotonic attention patterns
+- Same tokens being over-processed across layers
+
+**Two refractory mechanisms:**
+
+1. **Within-layer (column-load refractory):**
+   Each key token's "load" = mean attention received across all queries.
+   Heavily-attended tokens get a threshold boost → harder to attend to.
+   ```
+   column_load = mean_queries(att_probs)  # [B, H, 1, T]
+   effective_θ = θ + softplus(ref_strength) * column_load
+   ```
+
+2. **Cross-layer (state passing):**
+   Tokens heavily attended in layer L get a threshold boost in layer L+1.
+   Different layers naturally attend to different tokens.
+   ```
+   prev_load = mean_heads_queries(att_probs_prev_layer)  # [B, T]
+   effective_θ += sigmoid(cross_weight) * prev_load
+   ```
+
+**Parameters:** 180 total (v2's 108 + 72 new refractory params)
+- `refractory_strength`: per-head, init softplus(-2)≈0.13 (mild)
+- `cross_layer_weight`: per-head, init sigmoid(-2)≈0.12 (mild)
+- Identity-like init: starts as v2, learns refractory dynamics
+
+**Neuroscience basis:**
+- After-Hyperpolarization (AHP): fast (<10ms), medium (10-100ms), slow (>100ms)
+- Prevents attention sink = prevents excessive firing
+- Sparse coding: brain uses 1-5% simultaneous activation
+- Cross-layer = different cortical areas process different features
 
 ### v3: Temporal LIF (planned)
 Real neurons don't just gate within a single computation - they accumulate

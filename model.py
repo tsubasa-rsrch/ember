@@ -8,6 +8,11 @@ Based on Karpathy's nanoGPT, with brain-inspired modifications:
 3. Ternary weight support (BitNet-inspired): weights quantized to {-1, 0, 1}.
 
 Born from a conversation about how brains compute efficiently.
+
+v2.5 additions (2026-02-14):
+4. Refractory Period: tokens receiving heavy attention get threshold boost
+   (within-layer column-load + cross-layer state passing)
+5. Learnable refractory strength per head (identity init → starts as v2)
 """
 
 import math
@@ -25,27 +30,21 @@ from torch.nn import functional as F
 
 class LeakyIntegrateFireAttention(nn.Module):
     """
-    LIF Attention v2: Per-head parameters with identity-like initialization.
+    LIF Attention v2.5: Per-head parameters + refractory period.
 
-    Inspired by Leaky Integrate-and-Fire neurons. Each attention head has its
-    own learnable threshold, leak, and steepness parameters.
+    Builds on v2 (per-head learnable threshold/leak/steepness) with:
+    - Within-layer refractory: tokens receiving heavy attention from many queries
+      get a threshold boost (prevents attention sinks)
+    - Cross-layer refractory: tokens heavily attended in previous layer get
+      threshold boost in current layer (encourages layer specialization)
+    - All refractory parameters are learnable with identity-like init
+      (starts as v2, learns refractory dynamics during training)
 
-    Key improvements over v1:
-    - Per-head parameters: each head learns its own selectivity profile
-    - Learnable steepness: how sharp the fire/smolder boundary is
-    - Identity-like init: starts behaving like standard attention, then learns
-      where and how much to apply selective filtering
-    - Cached causal mask for efficiency
-
-    The mechanism:
-    1. Standard softmax attention computes base probabilities
-    2. LIF modulation sharpens the distribution per-head:
-       - "Firing" tokens (above threshold): full attention weight
-       - "Smoldering" tokens (below threshold): reduced by leak factor
-    3. Re-normalization ensures valid probability distribution
-
-    This naturally learns selective attention - different heads specialize in
-    different filtering strategies, mirroring cortical hierarchical processing.
+    Biological inspiration:
+    - After-Hyperpolarization (AHP): fired neurons temporarily raise threshold
+    - Prevents attention sink (first-token over-attention)
+    - Sparse coding: brain uses 1-5% simultaneous activation
+    - Different cortical layers process different features
     """
 
     def __init__(self, config):
@@ -58,27 +57,45 @@ class LeakyIntegrateFireAttention(nn.Module):
         self.n_head = config.n_head
         self.n_embd = config.n_embd
         self.dropout = config.dropout
+        self.lif_mode = config.lif_mode
 
         # Per-head LIF parameters (learnable) - identity-like initialization
-        # threshold starts very low → almost everything "fires" → ≈ standard attention
-        self.threshold = nn.Parameter(torch.full((config.n_head,), 0.01))
-        # leak starts high → smoldering tokens still keep most of their weight
-        self.leak = nn.Parameter(torch.full((config.n_head,), 2.0))  # sigmoid(2.0) ≈ 0.88
-        # steepness starts moderate → soft boundary, can sharpen during training
-        self.steepness = nn.Parameter(torch.full((config.n_head,), 2.0))  # softplus(2.0) ≈ 2.13
+        if self.lif_mode == 'fixed':
+            # Fixed threshold: not learnable, for ablation study
+            self.register_buffer('threshold', torch.full((config.n_head,), 1.0))
+            self.register_buffer('leak', torch.full((config.n_head,), 2.0))
+            self.register_buffer('steepness', torch.full((config.n_head,), 2.0))
+        else:
+            # threshold starts very low → ≈ standard attention
+            self.threshold = nn.Parameter(torch.full((config.n_head,), 0.01))
+            # leak starts high → smoldering tokens keep most weight
+            self.leak = nn.Parameter(torch.full((config.n_head,), 2.0))
+            # steepness starts moderate → soft boundary
+            self.steepness = nn.Parameter(torch.full((config.n_head,), 2.0))
 
-        # causal mask (cached, not recreated each forward pass)
+        # v2.5: Refractory period parameters (only for 'refractory' mode)
+        if self.lif_mode == 'refractory':
+            # Within-layer: column-load refractory strength per head
+            # softplus(-2.0) ≈ 0.13 → starts mild, can grow
+            self.refractory_strength = nn.Parameter(
+                torch.full((config.n_head,), -2.0))
+            # Cross-layer: how much previous layer's attention load affects threshold
+            # sigmoid(-2.0) ≈ 0.12 → starts mild
+            self.cross_layer_weight = nn.Parameter(
+                torch.full((config.n_head,), -2.0))
+
+        # causal mask (cached)
         self.register_buffer("causal_mask",
             torch.tril(torch.ones(config.block_size, config.block_size))
                  .view(1, 1, config.block_size, config.block_size))
 
-    def lif_activation(self, att_scores):
+    def lif_activation(self, att_scores, refractory_state=None):
         """
-        Apply per-head LIF modulation to attention scores.
+        Apply per-head LIF modulation with optional refractory period.
 
-        Strategy: softmax first (numerically stable), then per-head LIF gating.
-        With identity-like init, this starts as a near-identity transform and
-        gradually learns selective filtering as training progresses.
+        v2.5 adds:
+        - Column-load refractory: tokens attended by many queries get threshold boost
+        - Cross-layer refractory: previous layer's attention load raises threshold
         """
         # Standard softmax first (handles -inf masking correctly)
         att_probs = F.softmax(att_scores, dim=-1)
@@ -86,10 +103,27 @@ class LeakyIntegrateFireAttention(nn.Module):
         # Per-head parameters: reshape for broadcasting [1, n_head, 1, 1]
         threshold = torch.abs(self.threshold).view(1, -1, 1, 1) * 0.1
         leak = torch.sigmoid(self.leak).view(1, -1, 1, 1)
-        steepness = F.softplus(self.steepness).view(1, -1, 1, 1)  # ensure positive
+        steepness = F.softplus(self.steepness).view(1, -1, 1, 1)
+
+        # Compute effective threshold (may be boosted by refractory)
+        effective_threshold = threshold
+
+        if self.lif_mode == 'refractory':
+            # Within-layer refractory: column-load penalty
+            # How much is each key token being attended to (avg across queries)?
+            column_load = att_probs.mean(dim=-2, keepdim=True)  # [B, H, 1, T]
+            ref_strength = F.softplus(self.refractory_strength).view(1, -1, 1, 1)
+            effective_threshold = effective_threshold + ref_strength * column_load
+
+            # Cross-layer refractory: previous layer's attention load
+            if refractory_state is not None:
+                cross_w = torch.sigmoid(self.cross_layer_weight).view(1, -1, 1, 1)
+                # refractory_state: [B, T] → [B, 1, 1, T] for key dimension
+                prev_load = refractory_state.unsqueeze(1).unsqueeze(2)
+                effective_threshold = effective_threshold + cross_w * prev_load
 
         # Soft threshold: per-head fire/smolder decision
-        fire_mask = torch.sigmoid(steepness * (att_probs - threshold))
+        fire_mask = torch.sigmoid(steepness * (att_probs - effective_threshold))
         smolder_mask = leak * (1.0 - fire_mask)
 
         # Modulate: firing tokens keep full weight, smoldering get reduced
@@ -99,9 +133,13 @@ class LeakyIntegrateFireAttention(nn.Module):
         # Re-normalize to ensure valid probability distribution
         modulated = modulated / (modulated.sum(dim=-1, keepdim=True) + 1e-8)
 
-        return modulated
+        # Compute refractory state for next layer
+        # Mean attention received per token, averaged across heads and queries
+        new_refractory = modulated.mean(dim=1).mean(dim=-2)  # [B, T]
 
-    def forward(self, x, use_lif=True):
+        return modulated, new_refractory
+
+    def forward(self, x, use_lif=True, refractory_state=None):
         B, T, C = x.size()
 
         q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
@@ -116,17 +154,18 @@ class LeakyIntegrateFireAttention(nn.Module):
                 dropout_p=self.dropout if self.training else 0,
                 is_causal=True
             )
+            new_refractory = None
         else:
             # LIF attention path
             att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
             att = att.masked_fill(self.causal_mask[:, :, :T, :T] == 0, float('-inf'))
-            att = self.lif_activation(att)
+            att, new_refractory = self.lif_activation(att, refractory_state)
             att = self.attn_dropout(att)
             y = att @ v
 
         y = y.transpose(1, 2).contiguous().view(B, T, C)
         y = self.resid_dropout(self.c_proj(y))
-        return y
+        return y, new_refractory
 
 
 class StandardAttention(nn.Module):
@@ -201,7 +240,7 @@ class MLP(nn.Module):
 
 
 class EmberBlock(nn.Module):
-    """Transformer block with LIF attention."""
+    """Transformer block with LIF attention and cross-layer refractory state."""
 
     def __init__(self, config):
         super().__init__()
@@ -214,13 +253,16 @@ class EmberBlock(nn.Module):
         self.mlp = MLP(config)
         self.use_lif = config.use_lif
 
-    def forward(self, x):
+    def forward(self, x, refractory_state=None):
         if self.use_lif:
-            x = x + self.attn(self.ln_1(x), use_lif=True)
+            attn_out, new_refractory = self.attn(
+                self.ln_1(x), use_lif=True, refractory_state=refractory_state)
+            x = x + attn_out
         else:
             x = x + self.attn(self.ln_1(x))
+            new_refractory = None
         x = x + self.mlp(self.ln_2(x))
-        return x
+        return x, new_refractory
 
 
 # ---------------------------------------------------------------------------
@@ -240,6 +282,8 @@ class EmberConfig:
 
     # Brain-inspired features
     use_lif: bool = True  # Use LIF attention instead of standard softmax
+    # lif_mode: 'learnable' (v2), 'fixed' (ablation), 'refractory' (v2.5)
+    lif_mode: str = 'learnable'
 
 
 # ---------------------------------------------------------------------------
@@ -299,8 +343,10 @@ class Ember(nn.Module):
         pos_emb = self.transformer.wpe(torch.arange(0, t, dtype=torch.long, device=device))
         x = self.transformer.drop(tok_emb + pos_emb)
 
+        # Pass refractory state between layers (cross-layer dynamics)
+        refractory_state = None
         for block in self.transformer.h:
-            x = block(x)
+            x, refractory_state = block(x, refractory_state)
 
         x = self.transformer.ln_f(x)
 
@@ -346,34 +392,33 @@ class Ember(nn.Module):
 if __name__ == '__main__':
     print("=== Ember Model Test ===")
 
-    # Default config: ~10M params
-    config = EmberConfig()
+    # Test all modes
+    for mode_name, use_lif, lif_mode in [
+        ('Standard', False, 'learnable'),
+        ('LIF v2 (learnable)', True, 'learnable'),
+        ('LIF v2 (fixed)', True, 'fixed'),
+        ('LIF v2.5 (refractory)', True, 'refractory'),
+    ]:
+        print(f"\n--- {mode_name} ---")
+        config = EmberConfig(use_lif=use_lif, lif_mode=lif_mode)
+        model = Ember(config)
+
+        x = torch.randint(0, config.vocab_size, (2, 64))
+        logits, loss = model(x, targets=x)
+        print(f"  Loss: {loss.item():.4f}")
+
+        # Count trainable params
+        n_lif = sum(p.numel() for n, p in model.named_parameters()
+                    if any(k in n for k in ['threshold', 'leak', 'steepness',
+                                            'refractory', 'cross_layer']))
+        print(f"  LIF-specific params: {n_lif}")
+
+    # Quick generation test
+    print("\n--- Generation test (refractory mode) ---")
+    config = EmberConfig(lif_mode='refractory')
     model = Ember(config)
-
-    # Test forward pass
-    x = torch.randint(0, config.vocab_size, (2, 64))  # batch=2, seq=64
-    logits, loss = model(x, targets=x)
-    print(f"Input shape: {x.shape}")
-    print(f"Logits shape: {logits.shape}")
-    print(f"Loss: {loss.item():.4f}")
-
-    # Test generation
     prompt = torch.zeros((1, 1), dtype=torch.long)
     generated = model.generate(prompt, max_new_tokens=20, temperature=0.8)
-    print(f"Generated shape: {generated.shape}")
+    print(f"  Generated shape: {generated.shape}")
 
-    # Compare with standard attention
-    print("\n=== Standard Attention (baseline) ===")
-    config_std = EmberConfig(use_lif=False)
-    model_std = Ember(config_std)
-    logits_std, loss_std = model_std(x, targets=x)
-    print(f"Loss (standard): {loss_std.item():.4f}")
-
-    # LIF parameter info
-    if config.use_lif:
-        print("\n=== LIF Parameters ===")
-        for name, param in model.named_parameters():
-            if 'threshold' in name or 'leak' in name:
-                print(f"  {name}: {param.item():.4f}")
-
-    print("\nEmber is alive. 🔥")
+    print("\nEmber is alive.")
