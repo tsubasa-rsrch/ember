@@ -46,10 +46,43 @@ Only 3/36 heads deviate from pass-through. Role differentiation IS happening but
 
 **Next experiments needed:**
 1. Ablation: Standard vs fixed-θ vs learnable-θ vs refractory (4-condition) → **RUNNING (2026-02-14)**
-2. Attention entropy comparison (Standard vs LIF)
-3. Effective support size per head (how many tokens have >1% weight)
+2. Attention entropy comparison (Standard vs LIF) → **DONE (2026-02-14)**
+3. Effective support size per head (how many tokens have >1% weight) → **DONE (2026-02-14)**
 4. Gradient norm concentration analysis
 5. Longer sequence / long-range dependency task
+
+### Attention Analysis (v2 trained model, 2026-02-14)
+
+**Tool:** `analyze.py --compare` (extracts attention maps from checkpoints)
+
+**Entropy (higher=uniform, lower=peaked):**
+- LIF overall: **2.11** — sharply focused
+- Standard overall: 4.55 (near-uniform)
+- LIF entropy varies massively across heads (0.01 to 4.19)
+
+**Effective support size (tokens with >1% attention weight):**
+- LIF overall: **13.4** tokens (out of ~128 avg available)
+- Standard overall: 19.9 tokens
+- LIF range: 1.0 to 31.5 per head
+
+**First-token attention (attention sink):**
+- LIF: 2.0%, Standard: 2.4% (both low — Shakespeare char-level may not trigger sinks)
+
+**Key discovery — emergent head roles in LIF:**
+| Head | Entropy | Support | Interpretation |
+|------|---------|---------|----------------|
+| L0H3 | 0.01 | 1.0 | "Pointer" — attends to exactly 1 token |
+| L0H4 | 0.06 | 1.2 | "Pointer" — nearly single-token |
+| L0H0 | 2.44 | 14.3 | "Local context" — moderate focus |
+| L1H* | ~4.0 | ~28 | "Gatherers" — broad attention (whole layer) |
+| L4H3 | 0.59 | 3.3 | "Focused" — narrow late-layer head |
+| L4H1 | 0.70 | 3.8 | "Focused" — narrow late-layer head |
+
+LIF learned a hierarchy: **broad early (gather) → progressively sharper (focus)**.
+Layer 0 has "pointer" heads that self-selected; Layer 1 stays broad; Layers 3-5 narrow down.
+This mirrors cortical processing: V1 (broad receptive fields) → V4/IT (selective).
+
+Standard attention shows NO such specialization — all heads in all layers are nearly identical.
 
 ### v2.5: Refractory Period (2026-02-14, implemented)
 Biological neurons have a refractory period after firing - their threshold

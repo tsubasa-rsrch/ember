@@ -146,7 +146,7 @@ def train_model(use_lif=True, lif_mode='learnable', max_iters=MAX_ITERS, force_d
                     'iter': iter_num,
                     'best_val_loss': best_val_loss,
                 }
-                suffix = "lif" if use_lif else "std"
+                suffix = mode_str.lower().replace('-', '_')
                 torch.save(ckpt, os.path.join(OUT_DIR, f'ember_{suffix}.pt'))
 
         # Training step
