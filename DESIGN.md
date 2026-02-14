@@ -14,6 +14,43 @@
 - Result: -2.74% better than standard at 500 iters!
 - Discovery: Layer 0 Head 5 self-selected as "mild-filter" while others stayed pass-through
 
+### v2 Full Results (2000 iter, CPU, 2026-02-14)
+
+**Standard vs LIF comparison:**
+
+| Iter | Standard val_loss | LIF val_loss | Diff |
+|------|------------------|-------------|------|
+| 0 | 4.3378 | 4.2556 | -1.90% |
+| 500 | 2.1611 | 2.0402 | **-5.59%** |
+| 1000 | 1.6545 | 1.6255 | **-1.75%** |
+| 1500 | 1.5164 | 1.5230 | +0.44% |
+| 1999 | **1.4897** | 1.4925 | +0.19% |
+
+**Conclusion:** LIF converges faster (clear win at 500 iters) but Standard catches up by 2000 iters. Final difference is negligible (+0.19%).
+
+**Key finding - Head specialization:**
+- Layer 0, Head 3: threshold=1.14, steepness=2.82 → strong selective filter
+- Layer 0, Head 4: threshold=-0.34 → negative (bypass mode)
+- Layer 3, Head 1: threshold=0.52 → moderate filter
+- All other heads: threshold ≈ 0 → pass-through (identity behavior)
+
+Only 3/36 heads deviate from pass-through. Role differentiation IS happening but is sparse.
+
+**GPT analysis (via Kana, 2026-02-14):**
+- Formula simplification: `p' = p × [leak + (1-leak)σ(k(p-θ))]`
+- Improvement may be "gradient concentration" rather than "noise reduction"
+- To disambiguate: compare Standard vs LIF-fixed-θ vs LIF-learnable-θ
+- Shakespeare char-level has strong local dependency → test on long-range tasks
+- Softmax-post thresholding is correct (operates in probability space)
+- v2 alone is workshop-paper worthy with proper ablation + visualization
+
+**Next experiments needed:**
+1. Ablation: Standard vs fixed-θ vs learnable-θ (3-condition)
+2. Attention entropy comparison (Standard vs LIF)
+3. Effective support size per head (how many tokens have >1% weight)
+4. Gradient norm concentration analysis
+5. Longer sequence / long-range dependency task
+
 ### v3: Temporal LIF (planned)
 Real neurons don't just gate within a single computation - they accumulate
 potential over TIME. In our architecture, layers = time steps.
