@@ -209,6 +209,68 @@ class StandardAttention(nn.Module):
         return y
 
 
+class QwenGatedAttention(nn.Module):
+    """
+    Qwen-style Gated Attention (NeurIPS 2025 Best Paper baseline).
+
+    Core formula: Y' = Y ⊙ σ(XW_θ)
+    - Post-softmax sigmoid gate computed from input hidden states
+    - Eliminates attention sinks (46.7% → 4.8% first-token attention)
+    - G1 position: gate applied after SDPA output, before output projection
+
+    Reference: arxiv.org/abs/2505.06708
+    Note: At 10M scale, adds ~147K params/layer (884K total = +8.3% params).
+    Compare with LIF: +108 params total (+0.001%).
+    """
+
+    def __init__(self, config):
+        super().__init__()
+        assert config.n_embd % config.n_head == 0
+        self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd, bias=config.bias)
+        self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
+        # Gate projection: X → gate scores (elementwise, per Qwen paper)
+        self.gate_proj = nn.Linear(config.n_embd, config.n_embd, bias=False)
+        self.attn_dropout = nn.Dropout(config.dropout)
+        self.resid_dropout = nn.Dropout(config.dropout)
+        self.n_head = config.n_head
+        self.n_embd = config.n_embd
+        self.dropout = config.dropout
+        self.flash = hasattr(torch.nn.functional, 'scaled_dot_product_attention')
+        if not self.flash:
+            self.register_buffer("bias", torch.tril(torch.ones(config.block_size, config.block_size))
+                                        .view(1, 1, config.block_size, config.block_size))
+
+    def forward(self, x):
+        B, T, C = x.size()
+
+        # Compute gate from input hidden states: σ(XW_θ)
+        gate = torch.sigmoid(self.gate_proj(x))  # [B, T, C]
+
+        q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
+        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        if self.flash:
+            y = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=None,
+                dropout_p=self.dropout if self.training else 0,
+                is_causal=True
+            )
+        else:
+            att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
+            att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float('-inf'))
+            att = F.softmax(att, dim=-1)
+            att = self.attn_dropout(att)
+            y = att @ v
+
+        # Reshape to [B, T, C] and apply gate: Y' = Y ⊙ gate
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        y = y * gate  # Element-wise gating (G1 position)
+
+        y = self.resid_dropout(self.c_proj(y))
+        return y
+
+
 # ---------------------------------------------------------------------------
 # Model building blocks
 # ---------------------------------------------------------------------------
@@ -245,19 +307,25 @@ class EmberBlock(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
-        if config.use_lif:
+        if config.use_qwen_gate:
+            self.attn = QwenGatedAttention(config)
+        elif config.use_lif:
             self.attn = LeakyIntegrateFireAttention(config)
         else:
             self.attn = StandardAttention(config)
         self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
         self.use_lif = config.use_lif
+        self.use_qwen_gate = config.use_qwen_gate
 
     def forward(self, x, refractory_state=None):
         if self.use_lif:
             attn_out, new_refractory = self.attn(
                 self.ln_1(x), use_lif=True, refractory_state=refractory_state)
             x = x + attn_out
+        elif self.use_qwen_gate:
+            x = x + self.attn(self.ln_1(x))
+            new_refractory = None
         else:
             x = x + self.attn(self.ln_1(x))
             new_refractory = None
@@ -284,6 +352,7 @@ class EmberConfig:
     use_lif: bool = True  # Use LIF attention instead of standard softmax
     # lif_mode: 'learnable' (v2), 'fixed' (ablation), 'refractory' (v2.5)
     lif_mode: str = 'learnable'
+    use_qwen_gate: bool = False  # Qwen-style gated attention (NeurIPS 2025 baseline)
 
 
 # ---------------------------------------------------------------------------
@@ -393,14 +462,15 @@ if __name__ == '__main__':
     print("=== Ember Model Test ===")
 
     # Test all modes
-    for mode_name, use_lif, lif_mode in [
-        ('Standard', False, 'learnable'),
-        ('LIF v2 (learnable)', True, 'learnable'),
-        ('LIF v2 (fixed)', True, 'fixed'),
-        ('LIF v2.5 (refractory)', True, 'refractory'),
+    for mode_name, use_lif, lif_mode, qwen in [
+        ('Standard', False, 'learnable', False),
+        ('LIF v2 (learnable)', True, 'learnable', False),
+        ('LIF v2 (fixed)', True, 'fixed', False),
+        ('LIF v2.5 (refractory)', True, 'refractory', False),
+        ('Qwen Gate', False, 'learnable', True),
     ]:
         print(f"\n--- {mode_name} ---")
-        config = EmberConfig(use_lif=use_lif, lif_mode=lif_mode)
+        config = EmberConfig(use_lif=use_lif, lif_mode=lif_mode, use_qwen_gate=qwen)
         model = Ember(config)
 
         x = torch.randint(0, config.vocab_size, (2, 64))

@@ -89,7 +89,12 @@ def estimate_loss(model, train_data, val_data, device):
     return out
 
 
-def train_model(use_lif=True, lif_mode='learnable', max_iters=MAX_ITERS, force_device=None):
+def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
+                max_iters=MAX_ITERS, force_device=None, seed=1337):
+    # Set seed for reproducibility across conditions
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
     device = get_device(force_device)
     print(f"Device: {device}")
 
@@ -106,13 +111,16 @@ def train_model(use_lif=True, lif_mode='learnable', max_iters=MAX_ITERS, force_d
         bias=False,
         use_lif=use_lif,
         lif_mode=lif_mode,
+        use_qwen_gate=use_qwen_gate,
     )
 
     model = Ember(config).to(device)
     optimizer = model.configure_optimizers(WEIGHT_DECAY, LEARNING_RATE, (BETA1, BETA2), device)
 
     os.makedirs(OUT_DIR, exist_ok=True)
-    if not use_lif:
+    if use_qwen_gate:
+        mode_str = "Qwen-gate"
+    elif not use_lif:
         mode_str = "Standard"
     elif lif_mode == 'fixed':
         mode_str = "LIF-fixed"
@@ -199,28 +207,35 @@ def main():
     parser.add_argument('--compare', action='store_true', help='Train both and compare (2 conditions)')
     parser.add_argument('--ablation', action='store_true', help='Full 4-condition ablation study')
     parser.add_argument('--refractory', action='store_true', help='Train LIF v2.5 with refractory period')
+    parser.add_argument('--qwen-gate', action='store_true', help='Train Qwen-style gated attention baseline')
     parser.add_argument('--iters', type=int, default=MAX_ITERS, help='Max training iterations')
+    parser.add_argument('--seed', type=int, default=1337, help='Random seed (same across conditions)')
     parser.add_argument('--device', type=str, default=None, help='Force device (cpu/mps/cuda)')
     args = parser.parse_args()
 
     if args.ablation:
-        # Full 4-condition ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory
+        # Full ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory vs Qwen-gate
+        # (name, use_lif, lif_mode, use_qwen_gate)
         conditions = [
-            ('Standard', False, 'learnable'),
-            ('LIF-fixed', True, 'fixed'),
-            ('LIF-learnable', True, 'learnable'),
-            ('LIF-refractory', True, 'refractory'),
+            ('Standard', False, 'learnable', False),
+            ('LIF-fixed', True, 'fixed', False),
+            ('LIF-learnable', True, 'learnable', False),
+            ('LIF-refractory', True, 'refractory', False),
         ]
+        if args.qwen_gate:
+            conditions.append(('Qwen-gate', False, 'learnable', True))
+        n_cond = len(conditions)
         print("=" * 60)
-        print("EMBER ABLATION STUDY (4 conditions)")
+        print(f"EMBER ABLATION STUDY ({n_cond} conditions)")
         print("=" * 60)
 
         results = {}
-        for name, use_lif, lif_mode in conditions:
+        for name, use_lif, lif_mode, qwen in conditions:
             print(f"\n>>> Training {name}...")
             hist, loss, t = train_model(
-                use_lif=use_lif, lif_mode=lif_mode,
-                max_iters=args.iters, force_device=args.device)
+                use_lif=use_lif, lif_mode=lif_mode, use_qwen_gate=qwen,
+                max_iters=args.iters, force_device=args.device,
+                seed=args.seed)
             results[name] = (loss, t, hist)
 
         print("\n" + "=" * 60)
@@ -241,10 +256,12 @@ def main():
         print("=" * 60)
 
         print("\n>>> Training Standard Attention (baseline)...")
-        hist_std, loss_std, time_std = train_model(use_lif=False, max_iters=args.iters, force_device=args.device)
+        hist_std, loss_std, time_std = train_model(use_lif=False, max_iters=args.iters,
+                                                    force_device=args.device, seed=args.seed)
 
         print("\n>>> Training LIF Attention...")
-        hist_lif, loss_lif, time_lif = train_model(use_lif=True, max_iters=args.iters, force_device=args.device)
+        hist_lif, loss_lif, time_lif = train_model(use_lif=True, max_iters=args.iters,
+                                                    force_device=args.device, seed=args.seed)
 
         print("\n" + "=" * 60)
         print("COMPARISON RESULTS")
@@ -260,13 +277,18 @@ def main():
         else:
             print("Tie!")
     else:
-        if args.refractory:
+        if args.qwen_gate:
+            train_model(use_lif=False, use_qwen_gate=True,
+                       max_iters=args.iters, force_device=args.device, seed=args.seed)
+        elif args.refractory:
             train_model(use_lif=True, lif_mode='refractory',
-                       max_iters=args.iters, force_device=args.device)
+                       max_iters=args.iters, force_device=args.device, seed=args.seed)
         elif args.no_lif:
-            train_model(use_lif=False, max_iters=args.iters, force_device=args.device)
+            train_model(use_lif=False, max_iters=args.iters,
+                       force_device=args.device, seed=args.seed)
         else:
-            train_model(use_lif=True, max_iters=args.iters, force_device=args.device)
+            train_model(use_lif=True, max_iters=args.iters,
+                       force_device=args.device, seed=args.seed)
 
 
 if __name__ == '__main__':
