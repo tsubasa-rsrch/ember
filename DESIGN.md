@@ -49,6 +49,38 @@
 6. **Ranking**: Standard > LIF-fixed > LIF-refractory > LIF-learnable
 7. **NOTE**: No seed control in this run — different random inits per condition
 
+### v2.5 Seeded Ablation Results (2000 iter, M4 CPU, 2026-02-14, seed=1337)
+
+**5-condition ablation (Standard vs LIF-fixed vs LIF-learnable vs LIF-refractory vs Qwen-gate):**
+
+| Iter | Standard | LIF-fixed | LIF-learnable | LIF-refrac | Qwen-gate |
+|------|----------|-----------|---------------|------------|-----------|
+| 0 | 4.2811 | 4.2811 | 4.2811 | 4.2811 | 4.1765 |
+| 500 | 1.9779 | 2.0270 (+2.48%) | 2.0564 (+3.97%) | 2.0231 (+2.28%) | **1.7990 (-9.05%)** |
+| 1000 | 1.6036 | 1.6261 (+1.40%) | 1.6258 (+1.38%) | **1.6008 (-0.17%)** | 1.6100 (+0.40%) |
+| 1500 | 1.5278 | 1.5230 (-0.31%) | **1.5089 (-1.24%)** | **1.5088 (-1.24%)** | 1.5250 (-0.18%) |
+| 1999 | 1.4923 | 1.4952 (+0.20%) | **1.4694 (-1.53%)** | **1.4676 (-1.65%)** | 1.4942 (+0.13%) |
+
+**Key findings (seeded):**
+1. **LIF-refractory WINS** (-1.65%): Best final val_loss with only 180 extra params
+2. **LIF-learnable close second** (-1.53%): Reversal from unseeded run (+3.98%)
+3. **Qwen-gate ties Standard** (+0.13%): 884K extra params buy almost nothing at 2000 iters
+4. **LIF-fixed underperforms** (+0.20%): Fixed θ=1.0 too aggressive with this seed
+5. **Qwen-gate dominates iter 500** (-9.05%): Huge early boost from 884K params, fades by 2000
+6. **Seed matters enormously**: Unseeded ranking was opposite (Standard > LIF-fixed > rest)
+
+**Critical insight — seed sensitivity:**
+| Condition | Unseeded rank | Seeded rank | Stable? |
+|-----------|-------------|-------------|---------|
+| Standard | 1st | 3rd | seed-dependent |
+| LIF-fixed | 2nd | 5th | seed-dependent |
+| LIF-learnable | 4th (worst) | 2nd | **highly seed-dependent** |
+| LIF-refractory | 3rd | 1st (best) | seed-dependent |
+| Qwen-gate | N/A | 4th | TBD |
+
+**Conclusion**: Single-seed results are unreliable. Multi-seed (3+) averaging required.
+Next: Run seeds 42 and 668 for 3-seed mean ± std comparison.
+
 **Biological interpretation:**
 Brain thresholds aren't learned from scratch — they're genetically preset and refined.
 LIF-fixed (preset θ=1.0) better matches this biological reality.
@@ -354,3 +386,37 @@ strong initial selectivity (critical periods) gives way to refined plasticity.
 4. **Early convergence boost** → computational analog of developmental critical periods
 
 **Next**: Seeded 5-condition ablation (Standard + 3 LIF + Qwen gate) for fair comparison.
+
+### Adaptive Computation via LIF (Kana's insight, 2026-02-14)
+
+**Core idea**: Learned LIF parameters automatically identify which heads/tokens
+need full computation vs which can be approximated. No manual design needed.
+
+Three levels of adaptive computation:
+
+1. **Token-level skip (v3 Temporal LIF)**:
+   Tokens with gate < threshold → skip MLP entirely.
+   Direct FLOP reduction, measurable. Design already in v3 section.
+
+2. **Head-level mixed precision**:
+   Heads with θ ≈ 0 (pass-through) → INT8/FP16 computation.
+   Heads with θ > 0.1 (active filter) → FP32 full precision.
+   Example from v2.5 refractory results:
+   - L0H2 (θ=1.12) → full precision (gatekeeper, critical)
+   - L1H* (θ≈0) → INT8 safe (all pass-through)
+   - L4H3 (θ=0.40) → full precision (selective head)
+   Implementation: `torch.quantize_per_tensor` per head based on learned θ.
+
+3. **Dynamic per-input routing**:
+   At inference time, fire/smolder decision determines precision per token per head.
+   Like MoE routing, but the "router" is the LIF threshold — no extra parameters.
+
+**Comparison with MoE**:
+- MoE: learned router (extra params) → discrete expert selection
+- LIF: threshold IS the router (0 extra params) → continuous fire/smolder
+
+**Potential contribution**: "LIF as automatic mixed-precision routing" —
+the model tells you where to spend compute, for free.
+
+**To validate**: Measure FLOP reduction from skipping/quantizing pass-through heads
+while maintaining val_loss. Target: >30% FLOP savings with <0.5% loss degradation.
