@@ -1,0 +1,260 @@
+============================================================
+EMBER ABLATION STUDY (5 conditions)
+============================================================
+
+>>> Training Standard...
+Device: cpu
+Ember: 10.65M parameters (LIF=OFF)
+[Standard] iter     0 | train 4.3031 | val 4.2924 | 26.3s
+[Standard] iter   500 | train 1.6804 | val 1.8413 | 884.2s
+[Standard] iter  1000 | train 1.3582 | val 1.5858 | 1748.6s
+[Standard] iter  1500 | train 1.2091 | val 1.4814 | 2604.9s
+[Standard] iter  1999 | train 1.1242 | val 1.4672 | 3455.4s
+
+============================================================
+[Standard] Training complete in 3457.3s
+[Standard] Best val loss: 1.4672
+
+--- Generated sample ---
+
+HAd there the garland to entrol London,
+And we may hear; let me love him alone.
+
+GLOUCESTER:
+A happy day, the likeness that seals to bed,
+The states of my petition and will walk the right:
+My prophetition should be not thus right,
+Unless to quit me reward, but that if
+I was heard to be my soul imprisonment.
+
+BENVOLIO:
+Therefore, my lord, and my master.
+
+FRIAR LAURENCE:
+We hope here.
+
+ROMEO:
+Ay, so I have thought her but thanks.
+O, live!
+
+BENVOLIO:
+If I deny thee not, I should speak too late,
+Fo
+============================================================
+
+>>> Training LIF-fixed...
+Device: cpu
+Ember: 10.65M parameters (LIF=ON)
+[LIF-fixed] iter     0 | train 4.3031 | val 4.2924 | 51.6s
+[LIF-fixed] iter   500 | train 1.6697 | val 1.8307 | 1166.9s
+[LIF-fixed] iter  1000 | train 1.3553 | val 1.5849 | 2286.3s
+[LIF-fixed] iter  1500 | train 1.2093 | val 1.4810 | 3408.6s
+[LIF-fixed] iter  1999 | train 1.1225 | val 1.4698 | 4217.8s
+
+============================================================
+[LIF-fixed] Training complete in 4219.4s
+[LIF-fixed] Best val loss: 1.4698
+
+--- Generated sample ---
+
+Hadst thou thou have content to London?
+O sight, and thou art dead! ah, and thou comfort this:
+O gentleman, my sound! masters, his misery
+Thou hast lived me wonder'd to the wall.
+
+KING EDWARD IV:
+Come, my soul: let us stay traitor before.
+
+GLOUCESTER:
+Why, brother will I spoke the court?
+
+LADY GREY:
+To the back of Wednesday, for their way:
+Whom my canopy husband is but keep to his soul son of theirs?
+
+My lord,
+How more dangerous well of murder men,
+Bid me not creat in my true speech for a weal;
+============================================================
+
+--- Learned LIF parameters (per-head) ---
+
+>>> Training LIF-learnable...
+Device: cpu
+Ember: 10.65M parameters (LIF=ON)
+[LIF] iter     0 | train 4.3031 | val 4.2924 | 28.7s
+[LIF] iter   500 | train 1.6796 | val 1.8360 | 893.8s
+[LIF] iter  1000 | train 1.3539 | val 1.5881 | 1760.6s
+[LIF] iter  1500 | train 1.2139 | val 1.4947 | 2622.3s
+[LIF] iter  1999 | train 1.1273 | val 1.4667 | 3483.2s
+
+============================================================
+[LIF] Training complete in 3485.0s
+[LIF] Best val loss: 1.4667
+
+--- Generated sample ---
+
+Had they forgot him.
+
+GLOUCESTER:
+
+KING EDWARD IV:
+Ay, one of tender heart, the city may repose.
+
+GLOUCESTER:
+Conspirators, be his mind action:
+And let me be one of our presence.
+
+KING EDWARD IV:
+Come, let me to cloud still right:
+Unless I come to thee for the time is dead.
+
+GLOUCESTER:
+Look you there! the matter?
+What thinks you, that that I come to tell your wrong;
+For his dear were shall well not here's tale,
+But the new-brother is almsomer means,
+And with creation of the grave and truth,
+An
+============================================================
+
+--- Learned LIF parameters (per-head) ---
+  transformer.h.0.attn.threshold: [1.4665, -0.0122, -0.0003, -0.0002, -0.0007, 0.0000]
+  transformer.h.0.attn.leak: [0.6368, 2.5478, 3.3094, 3.4204, 2.9313, 3.3448]
+  transformer.h.0.attn.steepness: [3.2777, 1.6663, 0.7219, 0.6357, 1.0909, 0.6707]
+  transformer.h.1.attn.threshold: [0.0018, -0.0001, 0.0000, 0.0024, 0.4991, 0.0010]
+  transformer.h.1.attn.leak: [2.8513, 2.8567, 2.6358, 2.8398, 1.6189, 2.5912]
+  transformer.h.1.attn.steepness: [1.1572, 1.1476, 1.3927, 1.1704, 2.4523, 1.4577]
+  transformer.h.2.attn.threshold: [0.0002, 0.0044, -0.0002, -0.0010, -0.0002, 0.0061]
+  transformer.h.2.attn.leak: [2.7511, 2.2726, 2.7902, 2.4763, 2.9399, 2.3100]
+  transformer.h.2.attn.steepness: [1.3331, 1.7448, 1.2544, 1.5694, 1.1026, 1.7137]
+  transformer.h.3.attn.threshold: [0.0006, -0.0001, 0.3853, 0.0003, -0.0002, 0.0011]
+  transformer.h.3.attn.leak: [2.3411, 2.8002, 1.7572, 2.8432, 2.8020, 2.4228]
+  transformer.h.3.attn.steepness: [1.6574, 1.2400, 2.1659, 1.1611, 1.2217, 1.5860]
+  transformer.h.4.attn.threshold: [-0.0050, -0.0011, -0.0011, 0.0023, 0.0033, -0.0000]
+  transformer.h.4.attn.leak: [2.5980, 2.4985, 2.4690, 2.3974, 2.1693, 2.3741]
+  transformer.h.4.attn.steepness: [1.4432, 1.5557, 1.5297, 1.6102, 1.7960, 1.6295]
+  transformer.h.5.attn.threshold: [-0.0008, 0.0012, -0.0005, 0.0026, 0.0030, 0.0001]
+  transformer.h.5.attn.leak: [2.6797, 2.4637, 2.7466, 2.7390, 2.4775, 2.6535]
+  transformer.h.5.attn.steepness: [1.3659, 1.5710, 1.2749, 1.3091, 1.5407, 1.3858]
+
+>>> Training LIF-refractory...
+Device: cpu
+Ember: 10.65M parameters (LIF=ON)
+[LIF-refrac] iter     0 | train 4.3031 | val 4.2924 | 28.7s
+[LIF-refrac] iter   500 | train 1.6742 | val 1.8316 | 899.8s
+[LIF-refrac] iter  1000 | train 1.3521 | val 1.5681 | 1771.2s
+[LIF-refrac] iter  1500 | train 1.2091 | val 1.4814 | 2644.2s
+[LIF-refrac] iter  1999 | train 1.1223 | val 1.4694 | 3517.9s
+
+============================================================
+[LIF-refrac] Training complete in 3519.7s
+[LIF-refrac] Best val loss: 1.4694
+
+--- Generated sample ---
+
+HASTINGS:
+And marry he dies so hate and dust their hearts.
+You blood hear not before my intent hands,
+And have seen to the seal would entreap to thee.
+But they are all the charnet whereof:
+My proposence has most cloud still rage!
+
+QUEEN ELIZABETH:
+The king blood in it to the house of demand:
+But if it were become thy father's king;
+And, as my comfort, belike the devil
+Of his dear mercy so to him out on.
+
+QUEEN MARGARET:
+It is better so he is friend,
+And not where they have done thus forget,
+And
+============================================================
+
+--- Learned LIF parameters (per-head) ---
+  transformer.h.0.attn.threshold: [1.4779, 0.0508, -0.0001, -0.0002, -0.0004, -0.0000]
+  transformer.h.0.attn.leak: [0.6238, 2.3541, 3.3102, 3.3741, 2.8735, 3.3704]
+  transformer.h.0.attn.steepness: [3.2901, 1.8804, 0.7114, 0.7107, 1.1611, 0.6410]
+  transformer.h.0.attn.refractory_strength: [-0.8776, -0.7146, -0.6691, -0.5735, -1.3244, -0.5001]
+  transformer.h.0.attn.cross_layer_weight: [-2.0000, -2.0000, -2.0000, -2.0000, -2.0000, -2.0000]
+  transformer.h.1.attn.threshold: [0.0006, 0.0026, 0.0005, -0.6155, 0.0006, -0.3864]
+  transformer.h.1.attn.leak: [2.9399, 2.8109, 2.8536, 1.5069, 2.5797, 1.8972]
+  transformer.h.1.attn.steepness: [1.0849, 1.1969, 1.1599, 2.5298, 1.4456, 2.1159]
+  transformer.h.1.attn.refractory_strength: [-0.9886, -1.4367, -1.2202, -0.3635, -1.0550, -0.5404]
+  transformer.h.1.attn.cross_layer_weight: [-1.8882, -1.8510, -1.9072, -1.5840, -1.9548, -1.6761]
+  transformer.h.2.attn.threshold: [0.0008, 0.0000, 0.0002, 0.0003, 0.0002, -0.3552]
+  transformer.h.2.attn.leak: [2.4861, 2.8005, 2.9935, 2.9366, 2.7795, 1.6536]
+  transformer.h.2.attn.steepness: [1.5380, 1.2567, 1.0115, 1.1125, 1.2587, 2.3598]
+  transformer.h.2.attn.refractory_strength: [-1.0985, -0.5356, -1.2515, -0.6760, -0.7083, -0.3667]
+  transformer.h.2.attn.cross_layer_weight: [-1.5490, -1.5112, -1.7598, -1.6412, -1.6922, -1.1074]
+  transformer.h.3.attn.threshold: [0.0004, -0.0459, 0.0267, 0.0003, 0.0031, -0.0021]
+  transformer.h.3.attn.leak: [2.4469, 2.2281, 2.0421, 2.6924, 2.4930, 2.4885]
+  transformer.h.3.attn.steepness: [1.5913, 1.7637, 1.9404, 1.2976, 1.5321, 1.5164]
+  transformer.h.3.attn.refractory_strength: [-0.4860, -1.4528, -0.4186, -0.5402, -0.6946, -0.5586]
+  transformer.h.3.attn.cross_layer_weight: [-1.0517, -1.2403, -0.9601, -1.1736, -1.2357, -1.2388]
+  transformer.h.4.attn.threshold: [-0.0012, -0.0010, -0.0002, -0.0003, 0.0001, 0.0018]
+  transformer.h.4.attn.leak: [2.5012, 2.3335, 2.6960, 2.3844, 2.1500, 2.5369]
+  transformer.h.4.attn.steepness: [1.4930, 1.6664, 1.3433, 1.6279, 1.8008, 1.4797]
+  transformer.h.4.attn.refractory_strength: [-0.9119, -0.6229, -0.9891, -0.7006, -0.7258, -0.6288]
+  transformer.h.4.attn.cross_layer_weight: [-1.4094, -1.3264, -1.5657, -1.0752, -1.4519, -1.2405]
+  transformer.h.5.attn.threshold: [-0.0020, 0.0014, 0.0010, 0.0004, -0.0010, -0.0014]
+  transformer.h.5.attn.leak: [2.5717, 2.4217, 2.6407, 2.6907, 2.5695, 2.5800]
+  transformer.h.5.attn.steepness: [1.4873, 1.6196, 1.3834, 1.3360, 1.4624, 1.4449]
+  transformer.h.5.attn.refractory_strength: [-0.9227, -0.9987, -0.9289, -1.0995, -1.2299, -1.1787]
+  transformer.h.5.attn.cross_layer_weight: [-1.3364, -1.4361, -1.7634, -1.8015, -1.7098, -1.7640]
+
+>>> Training Qwen-gate...
+Device: cpu
+Ember: 11.53M parameters (LIF=OFF)
+[Qwen-gate] iter     0 | train 4.2827 | val 4.2822 | 17.1s
+[Qwen-gate] iter   500 | train 1.6183 | val 1.7989 | 695.9s
+[Qwen-gate] iter  1000 | train 1.3726 | val 1.6070 | 1374.3s
+[Qwen-gate] iter  1500 | train 1.2377 | val 1.5276 | 2052.7s
+[Qwen-gate] iter  1999 | train 1.1507 | val 1.4931 | 2730.6s
+
+============================================================
+[Qwen-gate] Training complete in 2732.0s
+[Qwen-gate] Best val loss: 1.4931
+
+--- Generated sample ---
+
+Shall I concern to thee.
+
+LUCIO:
+Not them.
+
+DUKE VINCENTIO:
+Come, I say then.
+
+ISABELLA:
+Why, thou'lst do't; and thy friend after:
+I am a little to despite thee.
+
+DUKE VINCENTIO:
+Undertake thee to her who.
+
+LUCIO:
+Now, believe the least so I do.
+
+CLAUDIO:
+Now, sir, is it is a threat of your business,
+Where I shrew her to speak.
+
+ISABELLA:
+I talk thee that I was a life,
+Life be a directed, and thou shalt see with a white,
+Thou art betreet this royal least,
+Within thy crowns it was not made me th
+============================================================
+
+============================================================
+ABLATION RESULTS
+============================================================
+  Standard              val_loss=1.4672  time=3457.3s  diff=+0.00%
+  LIF-fixed             val_loss=1.4698  time=4219.4s  diff=+0.18%
+  LIF-learnable         val_loss=1.4667  time=3485.0s  diff=-0.04%
+  LIF-refractory        val_loss=1.4694  time=3519.7s  diff=+0.15%
+  Qwen-gate             val_loss=1.4931  time=2732.0s  diff=+1.77%
+
+Best: LIF-learnable (val_loss=1.4667)
