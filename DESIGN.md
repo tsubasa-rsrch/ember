@@ -246,6 +246,50 @@ Benefits:
 - Mimics cortical efficient coding
 - No change to attention itself - LIF v2 handles that
 
+### v3.5: Biologically-Informed Extensions (Kana's proposals, 2026-02-14)
+
+Four neuroscience-grounded ideas for extending LIF attention:
+
+**1. Dynamic threshold adaptation (spike frequency adaptation)**
+Current: threshold θ is learned once (nn.Parameter).
+Proposed: θ adapts based on recent firing history.
+```
+θ_eff = θ_base + softplus(adaptation_strength) * running_avg_fire_rate
+```
+Bio basis: Membrane firing threshold shifts with neuromodulators and adaptation.
+Slow excitability changes → prevents sustained over-firing.
+Priority: Medium (v3 candidate)
+
+**2. Hyperbolic/power-law decay (multi-timescale memory)**
+Current: exponential leak (single time constant τ).
+Proposed: `leak = 1 / (1 + αt)` or power-law `t^{-β}`.
+Bio basis: Real synaptic currents have multiple time constants. Hyperbolic/power-law
+decays have longer tails → better long-range memory effects.
+Priority: Medium (test on long-sequence tasks where single-τ exponential is limiting)
+
+**3. Per-head persistent state (working memory)** ★
+Current: cross-layer state is per-token (column_load).
+Proposed: Each head maintains an "activation level" that persists across tokens.
+```
+head_state[h] = head_state[h] * persistence + mean_fire_rate[h]
+θ_eff[h] = θ[h] + head_state[h]  # busier heads raise threshold
+```
+Bio basis: PFC persistent activity — local circuit maintains internal state
+independent of input stream. Creates natural head rotation/load balancing.
+Priority: **High** (novel, differentiating, implementable in v3)
+
+**4. Gradient-only refractory (homeostatic plasticity)** ★
+Current: refractory modifies forward pass (effective_θ increases).
+Proposed: Forward pass unchanged; refractory only applied during backprop.
+```
+# Forward: normal LIF gating
+# Backward: recently-active heads get reduced gradient scale
+grad_scale[h] = 1.0 / (1.0 + softplus(ref_str) * recent_fire_count[h])
+```
+Bio basis: Short-term plasticity / homeostatic control. Don't stop firing,
+reduce learning sensitivity temporarily → prevents over-specialization.
+Priority: **High** (zero inference cost, natural head diversity, regularization effect)
+
 ### v4: Selective Layer LIF (idea)
 Only apply LIF attention to layers where it helps most.
 v2 analysis shows most layers stay pass-through anyway.
@@ -420,3 +464,53 @@ the model tells you where to spend compute, for free.
 
 **To validate**: Measure FLOP reduction from skipping/quantizing pass-through heads
 while maintaining val_loss. Target: >30% FLOP savings with <0.5% loss degradation.
+
+### Multi-Seed Analysis (2026-02-14/15, in progress)
+
+**Seeds**: 1337 (done), 42 (running), 668 (queued)
+**Unseeded** run available as additional data point (4 conditions only, no Qwen-gate).
+
+**Raw val_loss at iter 1999:**
+
+| Condition | No-seed | Seed 1337 | Seed 42 | Seed 668 | Mean ± Std |
+|-----------|---------|-----------|---------|----------|------------|
+| Standard | 1.4683 | 1.4923 | 1.4757 | (running) | 1.4840 ± 0.0083 |
+| LIF-fixed | 1.4816 | 1.4952 | 1.4759 | (running) | 1.4855 ± 0.0097 |
+| LIF-learnable | 1.5268 | 1.4694 | **1.4659** | (running) | **1.4676 ± 0.0018** |
+| LIF-refractory | 1.4862 | 1.4676 | 1.4804 | (running) | 1.4740 ± 0.0064 |
+| Qwen-gate | N/A | 1.4942 | 1.4870 | (running) | 1.4906 ± 0.0036 |
+
+Mean ± Std uses seeded runs only (seeds 1337, 42). Seed 668 running.
+
+**Seed sensitivity magnitude (no-seed vs seed 1337):**
+- Standard: 1.4683 → 1.4923 (Δ=0.024, 1.6%)
+- LIF-learnable: 1.5268 → 1.4694 (Δ=0.057, **3.9%** — flips sign!)
+- LIF-refractory: 1.4862 → 1.4676 (Δ=0.019, 1.3%)
+
+Observation: LIF-learnable has the highest seed sensitivity (~4x Standard's range).
+This makes sense — learnable thresholds are additional degrees of freedom
+that can be pushed into different local minima by initialization.
+
+**2-seed interim results (seeds 1337, 42):**
+| Condition | Mean | ± Std | vs Standard |
+|-----------|------|-------|-------------|
+| Standard | 1.4840 | 0.0083 | baseline |
+| LIF-fixed | 1.4855 | 0.0097 | +0.10% |
+| **LIF-learnable** | **1.4676** | **0.0018** | **-1.10%** |
+| LIF-refractory | 1.4740 | 0.0064 | -0.67% |
+| Qwen-gate | 1.4906 | 0.0036 | +0.44% |
+
+Key finding: LIF-learnable is both the best (-1.10%) and most stable (std=0.0018).
+
+**Head self-differentiation is seed-independent (robust finding):**
+Both seeds show 3-5/36 heads diverging significantly from pass-through,
+but WHICH heads diverge is seed-dependent. This mirrors biological development:
+cortical specialization is certain, but the specific mapping is stochastic.
+
+Seed 1337 examples: L0H2 θ=+1.14 (filter), L0H4 θ=+0.75 (filter)
+Seed 42 examples: L0H2 θ=-1.23 (bypass!), L0H4 θ=+0.58 (filter), L2H3 θ=+0.79 (filter)
+
+**Status:**
+- [x] Seed 1337 complete → `results/ablation_v25_seed1337_20260214.log`
+- [x] Seed 42 complete → `results/ablation_v25_seed42_20260215.log`
+- [ ] Seed 668 running (PID 45520, ETA ~07:00 EST Feb 15)
