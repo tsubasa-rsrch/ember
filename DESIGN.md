@@ -274,6 +274,26 @@ Quick training test (50 iter, seed 1337):
 CLI: `python3 train.py --temporal [--iters N] [--seed S]`
 Ablation: `python3 train.py --ablation --temporal [--qwen-gate]`
 
+**Full ablation (2000 iter, seed=42):**
+| Condition | val_loss | vs Standard | Time |
+|-----------|----------|-------------|------|
+| Standard | 1.5037 | baseline | 629s |
+| LIF-fixed | 1.4992 | -0.30% | 941s |
+| LIF-learnable | 1.4988 | -0.33% | 974s |
+| LIF-refractory | 1.4917 | -0.80% | 1047s |
+| **Temporal-LIF** | **1.4683** | **-2.36%** | 972s |
+
+**Temporal-LIF is the clear winner.** 3x improvement over v2.5 refractory.
+
+Learned temporal params show biological plausibility:
+- Layer 0: decay=1.00, threshold≈0 → early layer: standard processing
+- Layer 5: decay=1.01, threshold=-0.23 → deep layer: high accumulation, low threshold
+- Interpretation: deeper layers accumulate more potential and fire more readily
+  → important tokens get amplified processing in deep layers
+  → resembles cortical depth-dependent processing in biological brains
+
+**TODO: 3-seed ablation (42, 668, 1337) for statistical significance**
+
 ### v3.5: Biologically-Informed Extensions (Kana's proposals, 2026-02-14)
 
 Four neuroscience-grounded ideas for extending LIF attention:
