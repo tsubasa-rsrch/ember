@@ -1,0 +1,304 @@
+============================================================
+EMBER ABLATION STUDY (5 conditions)
+============================================================
+
+>>> Training Standard...
+Device: mps
+Ember: 10.65M parameters (LIF=OFF)
+[Standard] iter     0 | train 4.1640 | val 4.1694 | 7.9s
+[Standard] iter   500 | train 2.0411 | val 2.1109 | 169.8s
+[Standard] iter  1000 | train 1.4657 | val 1.6571 | 322.1s
+[Standard] iter  1500 | train 1.3083 | val 1.5439 | 475.6s
+[Standard] iter  1999 | train 1.2249 | val 1.5037 | 629.3s
+
+============================================================
+[Standard] Training complete in 629.4s
+[Standard] Best val loss: 1.5037
+
+--- Generated sample ---
+
+What can a letterer return than a rebellion
+Dead it not the queen wounds from my soul.
+
+DUKE VINCENTIO:
+There is not the consciping speak
+To the strike of their burthens of speechless
+This weak sight, and which you may contract a soul,
+And then part Plantagenet, what shows elder hath him:
+The lallow's traitor's impost, and make make restruction.
+
+GREMIO:
+I thank you? What loves be great the deed?
+
+HENRY BOLINGBROKE:
+As it is not better with a few in the house;
+And I would see the man in hour.
+
+
+============================================================
+
+>>> Training LIF-fixed...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[LIF-fixed] iter     0 | train 4.1640 | val 4.1694 | 15.1s
+[LIF-fixed] iter   500 | train 2.1397 | val 2.1871 | 248.5s
+[LIF-fixed] iter  1000 | train 1.4711 | val 1.6540 | 477.8s
+[LIF-fixed] iter  1500 | train 1.3160 | val 1.5503 | 709.1s
+[LIF-fixed] iter  1999 | train 1.2185 | val 1.4992 | 940.6s
+
+============================================================
+[LIF-fixed] Training complete in 940.7s
+[LIF-fixed] Best val loss: 1.4992
+
+--- Generated sample ---
+
+What can a letter to come to the Romeo?
+
+MERCUTIO:
+That thou art injury to my friends.
+
+MERCUTIO:
+Marry, there was strike changed to prove them.
+
+ROMEO:
+O, my liege; for your enemy sing,
+Being to your son wife to the ground.
+
+ROMEO:
+To the dead.
+
+ROMEO:
+They do instant the elder harm, their endalms,
+Of marry, that I canst bear a call forgeth.
+
+ROMEO:
+I have make a fearful for a bearrer.
+
+CAMILLO:
+A little-man's of allent deep?
+
+JULIET:
+Alack, few in the house and day, they should be so.
+
+Nurse:
+============================================================
+
+--- Learned LIF parameters ---
+
+>>> Training LIF-learnable...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[LIF] iter     0 | train 4.1640 | val 4.1694 | 14.1s
+[LIF] iter   500 | train 2.1324 | val 2.1901 | 254.3s
+[LIF] iter  1000 | train 1.4936 | val 1.6821 | 494.0s
+[LIF] iter  1500 | train 1.3031 | val 1.5445 | 734.5s
+[LIF] iter  1999 | train 1.2066 | val 1.4988 | 973.4s
+
+============================================================
+[LIF] Training complete in 973.6s
+[LIF] Best val loss: 1.4988
+
+--- Generated sample ---
+
+What can a letter of the late.
+
+CATESBY:
+My gracious lord?
+
+POMPEY:
+Who is my father's blood?
+
+AUTOLYCUS:
+You thank the prececipts, speak by the strifest.
+
+PAULINA:
+Why, ha!
+
+ANGELO:
+Why, the man will you we to your huntsmen that shall
+I will be a hunger: my lord.
+
+ARCHIDAMUS:
+The mayor are the letter than your side,
+You are more to restruct in this army,
+It shall be stay the army grave to be
+The half the man's of thee and be lost,
+What was a few in the house and make them so?
+I have to do the 
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.attn.threshold: [0.0002, 0.0383, 0.9443, -0.0002, 0.0010, -0.6417]
+  transformer.h.0.attn.leak: [3.1227, 2.2826, 1.3634, 3.2080, 2.9921, 1.5746]
+  transformer.h.0.attn.steepness: [0.8733, 1.8544, 2.5385, 0.7801, 1.0033, 2.4371]
+  transformer.h.1.attn.threshold: [0.0025, -0.0012, -0.0004, 0.0042, 0.0031, -0.0000]
+  transformer.h.1.attn.leak: [2.6599, 2.9288, 2.9530, 2.8757, 2.7128, 2.8779]
+  transformer.h.1.attn.steepness: [1.3622, 1.0965, 1.0705, 1.1173, 1.2887, 1.1429]
+  transformer.h.2.attn.threshold: [0.0003, -0.0003, 0.0001, 0.0007, -0.0002, 0.0005]
+  transformer.h.2.attn.leak: [3.0190, 2.7064, 3.0691, 2.9019, 3.0488, 2.9552]
+  transformer.h.2.attn.steepness: [1.0247, 1.3010, 0.9252, 1.1087, 0.9468, 1.0552]
+  transformer.h.3.attn.threshold: [-0.0008, 0.0005, 0.0000, -0.0003, -0.0283, -0.0007]
+  transformer.h.3.attn.leak: [2.4033, 2.8475, 2.6581, 2.7259, 2.3304, 2.8427]
+  transformer.h.3.attn.steepness: [1.6675, 1.2200, 1.3702, 1.3802, 1.7253, 1.2494]
+  transformer.h.4.attn.threshold: [0.1715, 0.0027, 0.0002, 0.0001, -0.1002, 0.0374]
+  transformer.h.4.attn.leak: [2.1930, 2.2596, 2.5841, 2.4605, 2.1895, 2.0925]
+  transformer.h.4.attn.steepness: [1.7652, 1.8089, 1.4900, 1.6022, 1.8016, 1.9847]
+  transformer.h.5.attn.threshold: [0.0004, -0.3065, -0.0769, -0.0017, -0.2413, 0.1988]
+  transformer.h.5.attn.leak: [2.2582, 1.9162, 2.1292, 2.4908, 2.0397, 2.1394]
+  transformer.h.5.attn.steepness: [1.7386, 2.0437, 1.8662, 1.4814, 1.9424, 1.8550]
+
+>>> Training LIF-refractory...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[LIF-refrac] iter     0 | train 4.1640 | val 4.1694 | 15.2s
+[LIF-refrac] iter   500 | train 2.0932 | val 2.1518 | 273.6s
+[LIF-refrac] iter  1000 | train 1.4284 | val 1.6236 | 531.7s
+[LIF-refrac] iter  1500 | train 1.2627 | val 1.5143 | 791.0s
+[LIF-refrac] iter  1999 | train 1.1733 | val 1.4917 | 1046.6s
+
+============================================================
+[LIF-refrac] Training complete in 1046.8s
+[LIF-refrac] Best val loss: 1.4917
+
+--- Generated sample ---
+
+What can a letter be come to the wrong?
+
+MERCUTIO:
+Only the march were a fretty that he was crown'd.
+
+ROMEO:
+A far of six change now, but by the string of their
+burthrows and envious encies, and set me one.
+
+ROMEO:
+I should here is too friend; and here are again;
+For so like a petter, that we dally this afternous
+And solemn against traitor him than it returns
+To me and now the senate of the deep is
+The way sicks of the presence of your honour
+Her is the hour was like your since there: which wil
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.attn.threshold: [-1.1579, 0.0003, 0.0822, 0.0001, -0.9046, 0.0003]
+  transformer.h.0.attn.leak: [1.0609, 3.1651, 2.3610, 3.2134, 1.1848, 3.0808]
+  transformer.h.0.attn.steepness: [2.8766, 0.8245, 1.7882, 0.7582, 2.7925, 0.9206]
+  transformer.h.0.attn.refractory_strength: [-1.0385, -1.3117, -0.8932, -1.2792, -0.9123, -1.2812]
+  transformer.h.0.attn.cross_layer_weight: [-2.0000, -2.0000, -2.0000, -2.0000, -2.0000, -2.0000]
+  transformer.h.1.attn.threshold: [0.0012, -0.0013, -0.0003, 0.0001, -0.0059, -0.0003]
+  transformer.h.1.attn.leak: [2.8851, 2.8515, 2.8953, 2.7136, 2.4118, 2.9494]
+  transformer.h.1.attn.steepness: [1.0697, 1.1586, 1.1024, 1.3024, 1.6001, 1.0703]
+  transformer.h.1.attn.refractory_strength: [-1.0831, -1.3878, -1.0880, -1.5243, -0.8684, -0.8065]
+  transformer.h.1.attn.cross_layer_weight: [-1.7469, -1.8746, -1.7907, -1.8151, -1.8513, -1.8943]
+  transformer.h.2.attn.threshold: [0.0002, -0.0001, 0.0000, -0.0005, -0.0004, -0.0000]
+  transformer.h.2.attn.leak: [2.9582, 3.0665, 2.8898, 2.7216, 2.7165, 3.1318]
+  transformer.h.2.attn.steepness: [1.0859, 0.9558, 1.1571, 1.3279, 1.3142, 0.8692]
+  transformer.h.2.attn.refractory_strength: [-0.6687, -0.7722, -0.4989, -0.6210, -0.5410, -1.1861]
+  transformer.h.2.attn.cross_layer_weight: [-1.5200, -1.6902, -1.3740, -1.5614, -1.4213, -1.5850]
+  transformer.h.3.attn.threshold: [-0.0015, 0.0441, 0.5699, -0.0013, 0.0139, 0.0007]
+  transformer.h.3.attn.leak: [2.5685, 2.2214, 1.8031, 2.4250, 2.3664, 2.4084]
+  transformer.h.3.attn.steepness: [1.4970, 1.8036, 2.1376, 1.6302, 1.6041, 1.6547]
+  transformer.h.3.attn.refractory_strength: [-0.4457, -0.4968, -0.4754, -0.5779, -0.7208, -0.6387]
+  transformer.h.3.attn.cross_layer_weight: [-0.8191, -0.9334, -0.9885, -1.0491, -1.1663, -1.1950]
+  transformer.h.4.attn.threshold: [0.0754, -0.0027, 0.2208, 0.2611, 0.0004, 0.0008]
+  transformer.h.4.attn.leak: [2.2263, 2.4568, 2.1016, 2.0050, 2.4292, 2.5491]
+  transformer.h.4.attn.steepness: [1.7353, 1.5154, 1.8611, 1.9729, 1.5707, 1.4259]
+  transformer.h.4.attn.refractory_strength: [-0.6619, -0.7144, -1.5572, -0.4333, -0.6742, -1.2339]
+  transformer.h.4.attn.cross_layer_weight: [-1.5255, -1.2173, -0.8054, -0.9491, -1.1607, -1.7237]
+  transformer.h.5.attn.threshold: [-0.0824, 0.0003, -0.0014, -0.4652, -0.0022, 0.1148]
+  transformer.h.5.attn.leak: [2.0692, 2.4726, 2.1897, 1.7956, 2.3937, 2.1151]
+  transformer.h.5.attn.steepness: [1.9176, 1.5562, 1.7806, 2.0661, 1.5947, 1.7958]
+  transformer.h.5.attn.refractory_strength: [-0.5841, -0.9410, -0.6408, -0.5644, -0.6254, -0.7425]
+  transformer.h.5.attn.cross_layer_weight: [-1.7462, -2.0348, -1.3807, -1.9747, -1.4200, -1.6365]
+
+>>> Training Temporal-LIF...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[Temporal-LIF] iter     0 | train 4.2366 | val 4.2427 | 14.2s
+[Temporal-LIF] iter   500 | train 1.9690 | val 2.0597 | 246.5s
+[Temporal-LIF] iter  1000 | train 1.4146 | val 1.6082 | 489.7s
+[Temporal-LIF] iter  1500 | train 1.2475 | val 1.4993 | 730.5s
+[Temporal-LIF] iter  1999 | train 1.1555 | val 1.4683 | 972.0s
+
+============================================================
+[Temporal-LIF] Training complete in 972.3s
+[Temporal-LIF] Best val loss: 1.4683
+
+--- Generated sample ---
+
+DUKE VINCENTIO:
+He was a late for my true second it!
+
+LADY ANNE:
+Away!
+
+LUCIO:
+And speak with me, Marcius die; for 'tis a charge
+Tribunes by Verona's house of Capulets,
+That we may shall be enteried.
+
+PETRUCHIO:
+Harp you are that so once, who are not but prized.
+
+FRIAR LAURENCE:
+Nay, he is so lady:
+'Tis a day's amonour standard's consequeror.
+
+CAMILLO:
+Yet he should have wrong'd me me,
+For I feeling his completry and end himself!
+
+PERDITA:
+I did might be resolved more than so?
+It is a white but
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.temporal_decay: 1.0000
+  transformer.h.0.temporal_threshold: -0.0002
+  transformer.h.0.temporal_steepness: 1.5168
+  transformer.h.0.attn.threshold: [0.0002, 0.3823, 0.0001, -0.0006, 0.0001, -1.0763]
+  transformer.h.0.attn.leak: [3.3338, 1.8344, 3.2223, 2.9561, 3.2152, 1.1194]
+  transformer.h.0.attn.steepness: [0.6509, 2.3555, 0.7485, 1.1975, 0.8054, 2.7851]
+  transformer.h.1.temporal_decay: 1.0041
+  transformer.h.1.temporal_threshold: 0.2669
+  transformer.h.1.temporal_steepness: 1.1331
+  transformer.h.1.attn.threshold: [0.7311, 0.0003, -0.0008, 0.0001, -0.0018, -0.0005]
+  transformer.h.1.attn.leak: [1.5878, 2.9179, 2.8999, 2.9571, 2.8219, 3.1010]
+  transformer.h.1.attn.steepness: [2.4088, 1.0853, 1.1136, 1.0709, 1.2088, 0.8967]
+  transformer.h.2.temporal_decay: 0.9908
+  transformer.h.2.temporal_threshold: 0.0606
+  transformer.h.2.temporal_steepness: 1.3971
+  transformer.h.2.attn.threshold: [0.0003, -0.0023, -0.0003, -0.0007, -0.0064, 0.5350]
+  transformer.h.2.attn.leak: [3.0057, 2.5168, 2.9668, 3.1502, 2.5609, 1.7779]
+  transformer.h.2.attn.steepness: [0.9978, 1.5197, 1.0776, 0.8619, 1.4930, 2.1656]
+  transformer.h.3.temporal_decay: 0.9983
+  transformer.h.3.temporal_threshold: -0.1164
+  transformer.h.3.temporal_steepness: 1.6723
+  transformer.h.3.attn.threshold: [0.0009, -0.0003, 0.0000, -0.1694, -0.0015, -0.0001]
+  transformer.h.3.attn.leak: [2.8499, 2.6993, 3.0048, 2.1947, 2.5655, 2.5268]
+  transformer.h.3.attn.steepness: [1.1921, 1.3358, 1.0110, 1.8204, 1.4342, 1.5312]
+  transformer.h.4.temporal_decay: 1.0126
+  transformer.h.4.temporal_threshold: -0.1967
+  transformer.h.4.temporal_steepness: 1.7644
+  transformer.h.4.attn.threshold: [-0.1062, 0.0047, -0.0005, 0.0018, -0.0008, -0.0766]
+  transformer.h.4.attn.leak: [2.2750, 2.2819, 2.5430, 2.5176, 2.4473, 2.2066]
+  transformer.h.4.attn.steepness: [1.6863, 1.7346, 1.4414, 1.5157, 1.5464, 1.7746]
+  transformer.h.5.temporal_decay: 1.0098
+  transformer.h.5.temporal_threshold: -0.2348
+  transformer.h.5.temporal_steepness: 1.8455
+  transformer.h.5.attn.threshold: [-0.0012, 0.0004, 0.0002, 0.0009, 0.0018, 0.0023]
+  transformer.h.5.attn.leak: [2.6025, 2.4831, 2.6503, 2.6031, 2.8227, 2.5673]
+  transformer.h.5.attn.steepness: [1.3910, 1.5593, 1.3475, 1.4655, 1.2320, 1.4360]
+
+============================================================
+ABLATION RESULTS
+============================================================
+  Standard              val_loss=1.5037  time=629.4s  diff=+0.00%
+  LIF-fixed             val_loss=1.4992  time=940.7s  diff=-0.30%
+  LIF-learnable         val_loss=1.4988  time=973.6s  diff=-0.33%
+  LIF-refractory        val_loss=1.4917  time=1046.8s  diff=-0.80%
+  Temporal-LIF          val_loss=1.4683  time=972.3s  diff=-2.36%
+
+Best: Temporal-LIF (val_loss=1.4683)
