@@ -90,6 +90,7 @@ def estimate_loss(model, train_data, val_data, device):
 
 
 def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
+                use_temporal_lif=False,
                 max_iters=MAX_ITERS, force_device=None, seed=1337):
     # Set seed for reproducibility across conditions
     torch.manual_seed(seed)
@@ -112,6 +113,7 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
         use_lif=use_lif,
         lif_mode=lif_mode,
         use_qwen_gate=use_qwen_gate,
+        use_temporal_lif=use_temporal_lif,
     )
 
     model = Ember(config).to(device)
@@ -120,6 +122,10 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
     os.makedirs(OUT_DIR, exist_ok=True)
     if use_qwen_gate:
         mode_str = "Qwen-gate"
+    elif use_temporal_lif and use_lif:
+        mode_str = "Temporal-LIF"
+    elif use_temporal_lif:
+        mode_str = "Temporal"
     elif not use_lif:
         mode_str = "Standard"
     elif lif_mode == 'fixed':
@@ -187,9 +193,9 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
     print(f"{'='*60}")
 
     # Print LIF parameters if applicable
-    if use_lif:
-        print(f"\n--- Learned LIF parameters (per-head) ---")
-        lif_keywords = ['threshold', 'leak', 'steepness', 'refractory', 'cross_layer']
+    if use_lif or use_temporal_lif:
+        print(f"\n--- Learned LIF parameters ---")
+        lif_keywords = ['threshold', 'leak', 'steepness', 'refractory', 'cross_layer', 'temporal']
         for name, param in model.named_parameters():
             if any(k in name for k in lif_keywords):
                 if param.dim() == 0:
@@ -207,6 +213,7 @@ def main():
     parser.add_argument('--compare', action='store_true', help='Train both and compare (2 conditions)')
     parser.add_argument('--ablation', action='store_true', help='Full 4-condition ablation study')
     parser.add_argument('--refractory', action='store_true', help='Train LIF v2.5 with refractory period')
+    parser.add_argument('--temporal', action='store_true', help='Train v3 Temporal LIF (adaptive computation)')
     parser.add_argument('--qwen-gate', action='store_true', help='Train Qwen-style gated attention baseline')
     parser.add_argument('--iters', type=int, default=MAX_ITERS, help='Max training iterations')
     parser.add_argument('--seed', type=int, default=1337, help='Random seed (same across conditions)')
@@ -214,26 +221,29 @@ def main():
     args = parser.parse_args()
 
     if args.ablation:
-        # Full ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory vs Qwen-gate
-        # (name, use_lif, lif_mode, use_qwen_gate)
+        # Full ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory vs Qwen-gate vs Temporal
+        # (name, use_lif, lif_mode, use_qwen_gate, use_temporal_lif)
         conditions = [
-            ('Standard', False, 'learnable', False),
-            ('LIF-fixed', True, 'fixed', False),
-            ('LIF-learnable', True, 'learnable', False),
-            ('LIF-refractory', True, 'refractory', False),
+            ('Standard', False, 'learnable', False, False),
+            ('LIF-fixed', True, 'fixed', False, False),
+            ('LIF-learnable', True, 'learnable', False, False),
+            ('LIF-refractory', True, 'refractory', False, False),
         ]
         if args.qwen_gate:
-            conditions.append(('Qwen-gate', False, 'learnable', True))
+            conditions.append(('Qwen-gate', False, 'learnable', True, False))
+        if args.temporal:
+            conditions.append(('Temporal-LIF', True, 'learnable', False, True))
         n_cond = len(conditions)
         print("=" * 60)
         print(f"EMBER ABLATION STUDY ({n_cond} conditions)")
         print("=" * 60)
 
         results = {}
-        for name, use_lif, lif_mode, qwen in conditions:
+        for name, use_lif, lif_mode, qwen, temporal in conditions:
             print(f"\n>>> Training {name}...")
             hist, loss, t = train_model(
                 use_lif=use_lif, lif_mode=lif_mode, use_qwen_gate=qwen,
+                use_temporal_lif=temporal,
                 max_iters=args.iters, force_device=args.device,
                 seed=args.seed)
             results[name] = (loss, t, hist)
@@ -279,6 +289,9 @@ def main():
     else:
         if args.qwen_gate:
             train_model(use_lif=False, use_qwen_gate=True,
+                       max_iters=args.iters, force_device=args.device, seed=args.seed)
+        elif args.temporal:
+            train_model(use_lif=True, use_temporal_lif=True,
                        max_iters=args.iters, force_device=args.device, seed=args.seed)
         elif args.refractory:
             train_model(use_lif=True, lif_mode='refractory',

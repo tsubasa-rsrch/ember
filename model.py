@@ -13,6 +13,11 @@ v2.5 additions (2026-02-14):
 4. Refractory Period: tokens receiving heavy attention get threshold boost
    (within-layer column-load + cross-layer state passing)
 5. Learnable refractory strength per head (identity init → starts as v2)
+
+v3 additions (2026-02-16):
+6. Temporal LIF: membrane potential accumulates across layers. Tokens that
+   exceed threshold "fire" (full MLP), others "smolder" (scaled MLP).
+   Gives adaptive computation per token — important tokens get more processing.
 """
 
 import math
@@ -302,7 +307,7 @@ class MLP(nn.Module):
 
 
 class EmberBlock(nn.Module):
-    """Transformer block with LIF attention and cross-layer refractory state."""
+    """Transformer block with LIF attention, cross-layer refractory, and temporal LIF."""
 
     def __init__(self, config):
         super().__init__()
@@ -317,20 +322,54 @@ class EmberBlock(nn.Module):
         self.mlp = MLP(config)
         self.use_lif = config.use_lif
         self.use_qwen_gate = config.use_qwen_gate
+        self.use_temporal_lif = config.use_temporal_lif
 
-    def forward(self, x, refractory_state=None):
+        # v3: Temporal LIF parameters (per-layer, learnable)
+        if self.use_temporal_lif:
+            # decay: how much potential persists. sigmoid(1.0) ≈ 0.73
+            self.temporal_decay = nn.Parameter(torch.tensor(1.0))
+            # threshold: fire point. softplus(0.0) ≈ 0.69
+            self.temporal_threshold = nn.Parameter(torch.tensor(0.0))
+            # steepness: soft gate sharpness. softplus(1.5) ≈ 1.74
+            self.temporal_steepness = nn.Parameter(torch.tensor(1.5))
+
+    def forward(self, x, refractory_state=None, membrane_potential=None):
         if self.use_lif:
             attn_out, new_refractory = self.attn(
                 self.ln_1(x), use_lif=True, refractory_state=refractory_state)
             x = x + attn_out
         elif self.use_qwen_gate:
-            x = x + self.attn(self.ln_1(x))
+            attn_out = self.attn(self.ln_1(x))
+            x = x + attn_out
             new_refractory = None
         else:
-            x = x + self.attn(self.ln_1(x))
+            attn_out = self.attn(self.ln_1(x))
+            x = x + attn_out
             new_refractory = None
-        x = x + self.mlp(self.ln_2(x))
-        return x, new_refractory
+
+        if self.use_temporal_lif and membrane_potential is not None:
+            # Importance signal: L2 norm of attention output per token
+            importance = attn_out.norm(dim=-1)  # [B, T]
+
+            # Update membrane potential: decay old + accumulate new
+            decay = torch.sigmoid(self.temporal_decay)
+            membrane_potential = membrane_potential * decay + importance
+
+            # Soft fire gate: sigmoid(steepness * (potential - threshold))
+            threshold = F.softplus(self.temporal_threshold)
+            steepness = F.softplus(self.temporal_steepness)
+            fire_gate = torch.sigmoid(steepness * (membrane_potential - threshold))
+
+            # MLP: firing tokens get full output, smoldering tokens get scaled
+            mlp_out = self.mlp(self.ln_2(x))
+            x = x + fire_gate.unsqueeze(-1) * mlp_out
+
+            # Soft reset: fired tokens lose potential proportionally
+            membrane_potential = membrane_potential * (1.0 - fire_gate)
+        else:
+            x = x + self.mlp(self.ln_2(x))
+
+        return x, new_refractory, membrane_potential
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +392,9 @@ class EmberConfig:
     # lif_mode: 'learnable' (v2), 'fixed' (ablation), 'refractory' (v2.5)
     lif_mode: str = 'learnable'
     use_qwen_gate: bool = False  # Qwen-style gated attention (NeurIPS 2025 baseline)
+
+    # v3: Temporal LIF — adaptive computation per token
+    use_temporal_lif: bool = False  # membrane potential accumulates across layers
 
 
 # ---------------------------------------------------------------------------
@@ -412,10 +454,14 @@ class Ember(nn.Module):
         pos_emb = self.transformer.wpe(torch.arange(0, t, dtype=torch.long, device=device))
         x = self.transformer.drop(tok_emb + pos_emb)
 
-        # Pass refractory state between layers (cross-layer dynamics)
+        # Pass refractory state and membrane potential between layers
         refractory_state = None
+        membrane_potential = None
+        if self.config.use_temporal_lif:
+            membrane_potential = torch.zeros(b, t, device=device)
         for block in self.transformer.h:
-            x, refractory_state = block(x, refractory_state)
+            x, refractory_state, membrane_potential = block(
+                x, refractory_state, membrane_potential)
 
         x = self.transformer.ln_f(x)
 
@@ -462,15 +508,18 @@ if __name__ == '__main__':
     print("=== Ember Model Test ===")
 
     # Test all modes
-    for mode_name, use_lif, lif_mode, qwen in [
-        ('Standard', False, 'learnable', False),
-        ('LIF v2 (learnable)', True, 'learnable', False),
-        ('LIF v2 (fixed)', True, 'fixed', False),
-        ('LIF v2.5 (refractory)', True, 'refractory', False),
-        ('Qwen Gate', False, 'learnable', True),
+    for mode_name, use_lif, lif_mode, qwen, temporal in [
+        ('Standard', False, 'learnable', False, False),
+        ('LIF v2 (learnable)', True, 'learnable', False, False),
+        ('LIF v2 (fixed)', True, 'fixed', False, False),
+        ('LIF v2.5 (refractory)', True, 'refractory', False, False),
+        ('Qwen Gate', False, 'learnable', True, False),
+        ('Temporal LIF (v3)', True, 'learnable', False, True),
+        ('Temporal LIF + Standard attn', False, 'learnable', False, True),
     ]:
         print(f"\n--- {mode_name} ---")
-        config = EmberConfig(use_lif=use_lif, lif_mode=lif_mode, use_qwen_gate=qwen)
+        config = EmberConfig(use_lif=use_lif, lif_mode=lif_mode,
+                             use_qwen_gate=qwen, use_temporal_lif=temporal)
         model = Ember(config)
 
         x = torch.randint(0, config.vocab_size, (2, 64))
@@ -480,12 +529,21 @@ if __name__ == '__main__':
         # Count trainable params
         n_lif = sum(p.numel() for n, p in model.named_parameters()
                     if any(k in n for k in ['threshold', 'leak', 'steepness',
-                                            'refractory', 'cross_layer']))
+                                            'refractory', 'cross_layer',
+                                            'temporal']))
         print(f"  LIF-specific params: {n_lif}")
 
     # Quick generation test
     print("\n--- Generation test (refractory mode) ---")
     config = EmberConfig(lif_mode='refractory')
+    model = Ember(config)
+    prompt = torch.zeros((1, 1), dtype=torch.long)
+    generated = model.generate(prompt, max_new_tokens=20, temperature=0.8)
+    print(f"  Generated shape: {generated.shape}")
+
+    # Generation test with temporal LIF
+    print("\n--- Generation test (temporal LIF v3) ---")
+    config = EmberConfig(use_temporal_lif=True)
     model = Ember(config)
     prompt = torch.zeros((1, 1), dtype=torch.long)
     generated = model.generate(prompt, max_new_tokens=20, temperature=0.8)

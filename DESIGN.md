@@ -246,6 +246,34 @@ Benefits:
 - Mimics cortical efficient coding
 - No change to attention itself - LIF v2 handles that
 
+**v3 Implementation (2026-02-16):**
+
+Implemented with soft gating (sigmoid) for gradient flow:
+```python
+# Per-layer learnable params (3 × 6 layers = 18 total):
+temporal_decay = nn.Parameter(torch.tensor(1.0))     # sigmoid → ~0.73 persistence
+temporal_threshold = nn.Parameter(torch.tensor(0.0))  # softplus → ~0.69 fire point
+temporal_steepness = nn.Parameter(torch.tensor(1.5))  # softplus → ~1.74 gate sharpness
+
+# In forward:
+importance = attn_out.norm(dim=-1)  # [B, T]
+membrane_potential = membrane_potential * sigmoid(decay) + importance
+fire_gate = sigmoid(softplus(steepness) * (membrane_potential - softplus(threshold)))
+mlp_out = mlp(ln_2(x))
+x = x + fire_gate.unsqueeze(-1) * mlp_out  # scale MLP by fire gate
+membrane_potential = membrane_potential * (1 - fire_gate)  # soft reset
+```
+
+Quick training test (50 iter, seed 1337):
+- Temporal-LIF: val_loss=3.0616 (39.2s)
+- Parameters update correctly; deeper layers learn higher decay (more accumulation)
+- Layer 4-5: temporal_decay ~1.008 (deeper = more persistent potential)
+- Layer 0: temporal_decay ~1.000 (early layer = less accumulation)
+- Total LIF+temporal params: 126 (108 LIF + 18 temporal)
+
+CLI: `python3 train.py --temporal [--iters N] [--seed S]`
+Ablation: `python3 train.py --ablation --temporal [--qwen-gate]`
+
 ### v3.5: Biologically-Informed Extensions (Kana's proposals, 2026-02-14)
 
 Four neuroscience-grounded ideas for extending LIF attention:
