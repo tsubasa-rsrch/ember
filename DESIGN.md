@@ -292,7 +292,50 @@ Learned temporal params show biological plausibility:
   → important tokens get amplified processing in deep layers
   → resembles cortical depth-dependent processing in biological brains
 
-**TODO: 3-seed ablation (42, 668, 1337) for statistical significance**
+### v3 3-Seed Ablation Results (2000 iter, MPS, 2026-02-16)
+
+**Seeds**: 42, 668, 1337
+
+**Per-seed val_loss:**
+| Condition | Seed 42 | Seed 668 | Seed 1337 |
+|-----------|---------|----------|-----------|
+| Standard | 1.5037 | 1.4699 | 1.4956 |
+| LIF-fixed | 1.4992 | 1.4640 | 1.4663 |
+| LIF-learnable | 1.4988 | 1.4608 | 1.4748 |
+| LIF-refractory | 1.4917 | 1.4601 | 1.4620 |
+| Temporal-LIF | 1.4683 | 1.4675 | 1.4930 |
+
+**3-seed statistics:**
+| Condition | Mean | ± Std | vs Standard |
+|-----------|------|-------|-------------|
+| Standard | 1.4897 | 0.0176 | baseline |
+| LIF-fixed | 1.4765 | 0.0197 | -0.89% |
+| LIF-learnable | 1.4781 | 0.0192 | -0.78% |
+| **LIF-refractory** | **1.4713** | **0.0177** | **-1.24%** |
+| Temporal-LIF | 1.4763 | 0.0145 | -0.90% |
+
+**Key findings:**
+1. **LIF-refractory wins overall**: -1.24% mean improvement, consistent across seeds
+2. **Temporal-LIF is inconsistent**: Seed 42 shows -2.35%, but seeds 668/1337 only -0.16%/-0.17%
+3. **All LIF variants beat Standard**: The LIF mechanism itself is consistently beneficial
+4. **Temporal-LIF has lowest std** (0.0145) in absolute terms, but this masks seed-dependent effectiveness
+5. **v2.5 refractory is more robust than v3 temporal** in multi-seed evaluation
+
+**Comparison with v2.5 3-seed results (different seed sets!):**
+- v2.5 best (LIF-learnable): -0.75% ± 0.0015 (seeds 1337, 42, 668)
+- v3 best (LIF-refractory): -1.24% ± 0.0177 (seeds 42, 668, 1337)
+- Note: v2.5 ran on CPU, v3 on MPS — not directly comparable
+- All v3 conditions show larger absolute improvements (different random baseline)
+
+**Temporal-LIF diagnosis:**
+The temporal mechanism (membrane potential across layers) shows promise but inconsistency.
+Seed 42's -2.35% suggests the mechanism CAN work well, but it depends on the
+random initialization aligning with the temporal dynamics.
+
+Possible improvements:
+- Better initialization of temporal params (currently 1.0/0.0/1.5)
+- Curriculum: train without temporal first, then enable (like fine-tuning)
+- Combine temporal with refractory (the current winner)
 
 ### v3.5: Biologically-Informed Extensions (Kana's proposals, 2026-02-14)
 
