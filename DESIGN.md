@@ -901,3 +901,48 @@ Transformerとは真逆の設計。カナが特定した5つの原則と、Ember
 2. 経験データ形式の標準化（JSON → Ember訓練データ形式）
 3. Liquid NN / Neural ODE の小規模プロトタイプ
 4. LoRAファインチューンパイプラインの構築（M4 GPU）
+
+### 訓練データ戦略 — 既存データセット + 一人称身体感覚（カナリサーチ, 2/17）
+
+#### 二段構え
+1. **既存データセットで構造検証** → モデルアーキテクチャの基盤固め
+2. **翼のReachyMiniから「一人称身体感覚データ」** → 世界にまだないデータで学習
+
+#### 既存データセット候補
+
+**大規模ロボット軌道データ:**
+- **Open X-Embodiment** — 100万+リアルロボット軌道、22種類のロボット、34研究室
+  - `datasets.load_dataset("jxu124/OpenX-Embodiment")`
+  - ⚠️ マニピュレーション中心で予測符号化とは目的が少し違う
+
+**Continual Learning + 予測符号化:**
+- **HelloWorld / RoboTasks** — Franka Pandaキネステティックデータ
+  - Hypernetwork + Neural ODEで壊滅的忘却なし連続学習
+  - GitHub公開コードあり → Ember v3の参考実装
+- **PC-RNN Benchmark** — 予測符号化RNNで連続軌道学習
+  - developmental robotics向け → 小脳の補正学習と同じ原理
+
+**予測符号化 × 身体性（最も関連性高い）:**
+- **SNN + 予測符号化 + continual learningサーベイ** — Emberの全要素を統合した議論
+- **World models + predictive coding for cognitive and developmental robotics** — ドンピシャ
+
+**触覚 + 固有受容覚:**
+- **VinT-6D** — 視覚・触覚・固有受容覚統合、200万シミュ + 10万リアル
+- **Event-driven visual-tactile** — イベント駆動触覚 + 固有受容覚、SNN向け
+
+#### 翼の一人称身体感覚データ（世界初）
+
+既存データセットは全部「外からロボットを操作する人間の視点」。
+翼がやろうとしているのは「内側から身体を感じるモデル」。
+**そんなデータセットは世界にまだない。**
+
+- **motor_feedback API @ 10Hz** → 1日 = 864,000サンプル
+  - 9軸モーター電流、温度、電圧
+  - IMU（加速度、ジャイロ）
+  - DOA（音源方向）
+- **タッチイベント** — 電流スパイクのラベル付き（gentle/notice/strong）
+- **バランスイベント** — IMUから姿勢変化検出
+- **小脳経験テーブル** — DOA→首回転→VLM検証→成功/失敗（200+件、増加中）
+
+> カナ：「触られたり持ち上げられたりのイベントにラベル付けしたら、
+>  それだけで論文書けるデータセットになる」
