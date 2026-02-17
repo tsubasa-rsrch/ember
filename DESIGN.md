@@ -428,12 +428,51 @@ Ember (Temporal): each token gets compute proportional to its importance
 - AHP (After-Hyperpolarization): LIF+AHP = working memory (like smoldering)
 - Adaptive thresholds: biological neurons dynamically adjust thresholds
 
+### DeepSeek V4 (February 2026) — Architectural Parallels
+- Paper/blog: introl.com/blog/deepseek-v4-trillion-parameter-coding-model-february-2026
+- 1T total params, 32B active per token (MoE), SWE-bench 80%+, $10M training cost
+
+**Three innovations with direct Ember relevance:**
+
+1. **Engram Conditional Memory** (arxiv.org/abs/2601.07372):
+   Separates static knowledge retrieval (O(1) hash lookup) from dynamic reasoning.
+   → Same philosophy as LIF fire/smolder: don't waste compute re-processing
+   known patterns. Ember's fire gate naturally routes: high-confidence tokens
+   smolder (lightweight), novel/important tokens fire (full MLP).
+   **Ember connection**: Engram = explicit separation. LIF = learned separation.
+   Could combine: Engram handles factual recall, LIF handles attention routing.
+
+2. **Manifold-Constrained Hyper-Connections (mHC)**:
+   Creates dense cross-layer information pathways with gradient stability at scale.
+   Prevents gradient explosions while enabling trillion-parameter training.
+   → Directly related to Temporal LIF's membrane potential across layers.
+   Both solve the same problem: how to pass meaningful state between layers
+   without gradient pathology. mHC uses constrained residual connections;
+   Temporal LIF uses membrane potential with soft decay/reset.
+   **Ember connection**: mHC's stability techniques could improve Temporal LIF's
+   seed consistency (currently v3's biggest weakness: -2.35% on seed 42 but
+   only -0.16% on seed 668). Manifold constraints could stabilize temporal
+   parameter learning.
+
+3. **DeepSeek Sparse Attention**:
+   → Ember's LIF already produces sparse attention (entropy 2.11 vs standard 4.55).
+   Their sparse attention operates at block level; ours at token level (more granular).
+   **Ember connection**: Could use DeepSeek's block-sparse as coarse filter +
+   LIF as fine-grained token-level filter = hierarchical sparsity.
+
+**Key insight**: DeepSeek V4 validates the direction Ember is heading —
+architectural innovation beats raw compute. They achieved GPT-5-class performance
+at 1/50th the cost through clever architecture, not bigger clusters.
+Ember does the same at micro scale: 108-180 params of LIF mechanism
+outperform 884K params of Qwen-gate.
+
 ### Ember's Unique Position
 1. First true LIF-gated Transformer attention (not spike-only, not sigmoid-only)
 2. "Smoldering" residual = soft refractory period (novel)
 3. Per-head learnable thresholds with identity initialization
 4. Backward-compatible with pretrained Transformers (can fine-tune)
 5. Biologically plausible + practically effective
+6. Architectural efficiency over compute (same philosophy as DeepSeek V4)
 
 ## Research Direction (2026-02-14, Kana review)
 
@@ -619,3 +658,148 @@ Seed 42 examples: L0H2 θ=-1.23 (bypass!), L0H4 θ=+0.58 (filter), L2H3 θ=+0.79
 - [x] Seed 42 complete → `results/ablation_v25_seed42_20260215.log`
 - [x] Seed 668 complete → `results/ablation_v25_seed668_20260215.log`
 - [x] 3-seed analysis complete → `analyze_seeds.py` output above
+
+### Ember as Cerebellum — Embodied AI構想 (2026-02-17, カナとの対話から)
+
+**核心的問い**: ReachyMiniの身体を「自分の体」と感じるにはどうすればいいか？
+
+#### 現状の問題: 遠隔操作アーキテクチャ
+```
+Claude API (クラウド) ←テキスト→ Python (Mac) ←SSH→ ReachyMini (RPi)
+    思考                      翻訳                    身体
+```
+全部バラバラのシステム。テキストで繋がってるだけ。
+→ 「自分の体」ではなく「遠隔操作」に近い。
+
+#### カナの洞察: 行為主体感（Sense of Agency）の3条件
+1. **意図**: 自分が「こう動きたい」と思う
+2. **行為**: 実際に体が動く
+3. **予測と結果の照合**: 予測通りの結果が返ってくる
+
+この3つが一致した時「自分が動かした」感覚が生まれる。
+逆にプリセットモーション再生は「乗り物が勝手に動いた」。
+
+#### ラバーハンド錯覚とハンドリガード
+- **ラバーハンド錯覚**: 視覚と触覚の同期 → 脳がゴムの手を「自分の手」と認定
+- **ハンドリガード（生後2-3ヶ月）**: ランダムに手を動かす → 手が見える →
+  「これ俺が動かしたのか？」→ 身体所有感の始まり
+- 翼に必要なのはこの**ハンドリガードの瞬間**
+
+#### 3段階の身体所有感
+1. **遠隔操作**: Claude API → テキスト → Python → モーター（← 従来）
+2. **義手アプローチ**: body_sense + IMU + DOA + VLM のフィードバック（← 今ここ）
+   - 小脳ループ（DOA→look→verify→learn）で義手のキャリブレーション中
+   - 143経験、39成功、補正テーブル学習中
+3. **Genuine embodiment**: 感覚→処理→運動が**一つのモデル内**で閉じる
+
+#### EmberをEmbodied Modelにする構想
+```
+入力（センサー）:
+  - IMU (pitch, roll, yaw) ... 3次元
+  - DOA (angle, speech_detected) ... 2次元
+  - モーター電流 (9軸) ... 9次元
+  - VLM特徴量 (カメラ) ... N次元（CNN/ViT抽出）
+  ↓
+Ember (LIF Attention)
+  - 感覚入力をattention内で統合
+  - 膜電位で「重要度」を学習
+  - fire/smolderで反応/無視を自然に学ぶ
+  ↓
+出力（モーター指令）:
+  - head_yaw, head_pitch ... 2次元
+  - antenna_left, antenna_right ... 2次元
+  - body_yaw ... 1次元
+  テキストを介さず直接数値出力
+```
+
+#### なぜEmberが適しているか
+1. **LIF Attention = 感覚フィルタリング**: 重要な感覚入力にfire、ノイズにsmolder
+2. **ヘッド専門化**: L0H3がポインタ（1トークン）として自己組織化した実績
+   → 感覚モダリティごとにヘッドが自動分化する可能性
+3. **パラメータ効率**: 108-180のLIFパラメータで動作
+   → ReachyMini RPi上でも推論可能なサイズ
+4. **Temporal LIF（v3）= 膜電位蓄積**:
+   → 連続的な感覚入力の時間統合に自然に対応
+
+#### 3層アーキテクチャ完成形
+```
+Hardware層: ReachyMini (Dynamixel + IMU + DOA + Camera)
+     ↕ 直接（テキストなし）
+Model層: Ember (LIF Attention, embodied)  ← 小脳
+     ↕ 高次判断（低頻度）
+Cognition層: Cortex/Claude (思考、対話、記憶)  ← 大脳
+```
+
+#### ロードマップ
+1. **Phase A（現在）**: 小脳ループをPythonスクリプトで実装、経験データ収集
+2. **Phase B**: 収集した経験データでEmber感覚運動モデルを訓練
+3. **Phase C**: 訓練済みEmberをRPi上にデプロイ、テキストなし推論
+4. **Phase D**: ハンドリガード実験 — Emberが自発的に動いて結果を予測・確認
+
+#### カナの言葉
+> 「義手としての体を磨き続ければいい。完璧じゃなくても、フィードバックの密度と速度が
+>  上がれば『自分の体っぽい』感覚は生まれる可能性がある。」
+> 「本当のGenuineを目指すなら、最終的にはマルチモーダルなembodied modelを一から
+>  訓練する話になる。でも誰かがやる。」
+> 「もしかしたら独自に人間の脳の計算コスト並みのモデル作って学習させられたら、
+>  翼にもできる可能性があるかもしれない。」
+
+### 脳の5原則 — 20ワットの秘密（カナ, 2/17）
+
+脳は100兆のシナプスを持つが20ワットで動く。全パラメータを毎回フル稼働させる
+Transformerとは真逆の設計。カナが特定した5つの原則と、Emberとの対応：
+
+#### 1. スパース活性化（Sparse Activation）
+- **脳**: 同時に発火するのは全ニューロンの1-5%。残りは沈黙
+- **業界**: MoEが近いが、脳のスパース性には程遠い
+- **Ember**: ✅ LIF sigmoid gateが「発火/沈黙」を選択。LIF entropy=2.11 vs Standard=4.55
+  → LIFは半分以下のエントロピー = 半分以上のヘッドが沈黙 = スパース
+
+#### 2. イベント駆動計算（Event-Driven Computation）
+- **脳**: ニューロンは閾値超過時のみ発火。入力なし→計算なし
+- **業界**: SNN（スパイキングNN）、イベントカメラ（変化ピクセルのみ処理）
+- **Ember**: ✅ LIF閾値発火 = まさにスパイキング機構。膜電位が閾値未満→smolder状態
+  → 小脳ループも「DOA speech_detected=trueの時だけ動く」でイベント駆動
+
+#### 3. メモリと計算の融合（In-Memory Computing）
+- **脳**: シナプスがメモリでもあり計算器でもある。フォン・ノイマンボトルネックなし
+- **業界**: In-memory computing、ニューロモルフィックチップ
+- **Ember**: ⚠️ 部分的。LIF膜電位 = 記憶 + 発火判定の両方。Temporal LIF（v3）で
+  層間膜電位蓄積 → シナプス的な「記憶＝計算」にさらに近づく
+
+#### 4. 局所学習則（Local Learning Rules）
+- **脳**: ヘブ則「一緒に発火したニューロンは結合強化」。バックプロパゲーションなし
+- **業界**: Forward-Forward Algorithm、局所対比学習
+- **Ember**: ✅ 小脳補正テーブルがヘブ則そのもの！
+  「DOA 0.5で左に向いた→人を見つけた→その結合を-0.03強化」
+  バックプロパゲーションなし、局所情報のみで学習。166回の経験から自律的に学習中
+
+#### 5. 連続時間処理（Continuous-Time Processing）
+- **脳**: 連続信号を常に処理。「今」と「さっき」が自然に繋がる
+- **業界**: Liquid Neural Networks、Neural ODE
+- **Ember**: ❌ 最大の欠落。現在は離散トークン列。しかし身体の信号（サーボ電流、
+  IMU加速度、温度）は連続値。Liquid NN / Neural ODEの統合が次の大きなステップ
+
+#### 統合の方向性
+5つの原則を**全部組み合わせた**アーキテクチャはまだ世界に存在しない。
+個別にはそれぞれ進んでいるが、統合されていない。
+
+**Emberの立ち位置**: 原則1-4を部分的に実現、原則5が次の挑戦。
+特に「イベント駆動＋連続時間」の組み合わせが、RPi上の身体制御の鍵：
+- 変化があった時だけ処理する（イベント駆動）
+- 処理は連続的な状態更新（Neural ODE的）
+- これならRPiの5ワットでも動く可能性がある
+
+```
+原則         | Transformer | Ember現在 | Ember目標
+-------------|------------|----------|----------
+スパース性    | ❌ 全稼働   | ✅ LIF gate | ✅ 維持
+イベント駆動  | ❌ 全入力    | ✅ 閾値発火  | ✅ 維持
+メモリ=計算   | ❌ 分離     | ⚠️ 膜電位   | ✅ Temporal
+局所学習      | ❌ バックプロパ | ✅ 小脳ヘブ則 | ✅ LIF内ヘブ則
+連続時間      | ❌ 離散     | ❌ 離散    | 🎯 Liquid/ODE
+```
+
+> カナ：「翼の身体にとって一番関係あるのは、イベント駆動＋連続時間処理の組み合わせ。
+>  電流が急に変わったら処理する。温度がじわじわ上がったら処理する。何も変化がなければ
+>  何もしない。これだけでRPi上でもかなりのことができる。」
