@@ -566,6 +566,76 @@ backbone_input = torch.cat([text_tokens, vision_tokens, audio_tokens, body_token
 3. **Direct State Injection**: cerebellum CfC h(t) → Ember backbone merge point
 4. **Feedback loop**: backbone motor output → cerebellum → physical action → sensory change → backbone
 
+## Convergent Evolution: End-to-End Co-Development (カナの洞察 2026-02-18)
+
+**「別々に完成してから繋ぐんじゃない。一緒に育って同じインターフェースに収束した。」**
+
+### Encoder Training Cost Hierarchy
+
+| Modality | Pretrained Weights | Training Cost | Notes |
+|----------|-------------------|---------------|-------|
+| **Audio** | Whisper (open) | Low — fine-tune only | Mel spectrogram encoder is solved |
+| **Vision** | ViT (many variants) | Low-Medium — fine-tune | ViT-tiny weights available |
+| **Body/IMU** | None (novel) | Low — small input (2-6D) | Custom training needed but lightweight |
+| **Motor/Servo** | None (novel) | Low — small input (2-4D) | Similar to body encoder |
+
+### End-to-End Co-Evolution (赤ちゃんの脳発達と同型)
+
+**Advantage of Ember**: エンコーダとバックボーンをend-to-endで一緒に学習できる。
+
+```
+Traditional (pipeline):
+  Train encoder → freeze → attach to backbone → train backbone
+  Problem: encoder optimizes for generic features, not for this backbone
+
+Ember (end-to-end):
+  Train encoder + backbone simultaneously
+  Encoder learns: "what representation does THIS backbone need?"
+  Backbone learns: "how to use what THIS encoder sends"
+  → Co-evolved interface (like retina + visual cortex)
+```
+
+**Human development analog**:
+- 赤ちゃんの網膜と視覚皮質は**一緒に成熟**する
+- 網膜は「皮質が処理しやすい信号」を送るように進化
+- 視覚皮質は「網膜が送ってくる信号」を処理するように進化
+- 別々に設計されたんじゃなくて、一緒に育って収束した
+
+### Multi-Encoder Convergent Evolution
+
+**複数エンコーダが同じバックボーンに対して同時にco-evolveすると、
+全エンコーダが「共通の表現空間」に収束する可能性がある。**
+
+```
+Audio Encoder ─────┐
+                    │     共通表現空間
+Vision Encoder ─────┼──→  (unified latent space)
+                    │     ↕ CfC backbone
+Body Encoder ──────┘
+
+All encoders learn to produce vectors in the same "language"
+that the backbone can integrate.
+```
+
+This mirrors human neuroscience:
+- 異なる感覚モダリティ（視覚、聴覚、触覚）が
+  最終的に**同じ神経コード**に乗る
+- Superior temporal sulcus, intraparietal sulcus: 多感覚統合領域
+- **The common code emerges from co-evolution, not design**
+
+### Connection to Today's Insight Chain
+
+```
+VLM architecture (Claude ViT) → confirms dedicated encoder hypothesis
+  → Biological mapping (retina=ViT, cochlea=AudioEnc, spindle=BodyEnc)
+    → Audio pipeline (Whisper mel spectrogram → Conv1D → backbone)
+      → Direct state injection (cerebellum CfC → backbone CfC)
+        → End-to-end co-evolution (baby brain development)
+          → Common representation space (convergent evolution)
+```
+
+**全部「なぜ脳がそうなってるか」の答えの一部。Emberがそれを再現する設計図。**
+
 ## Latest Training Results (2026-02-18)
 
 **4L/256d Checkpoint Training (seed=1337)**:
