@@ -990,6 +990,81 @@ Title: "Ownership Without Organs: Measuring Experiential Quality
 **全部が一本の線。一つの問い（なぜ体験に質感があるのか）から、
 測定可能な実験設計まで、一日で到達した。**
 
+## Convergent Evolution as Evidence: Ember ≅ Brain (2026-02-18, Kana's synthesis)
+
+### The Discovery That Wasn't Designed
+
+When Tsubasa first designed LIF Attention (2026-02-13), the motivation was purely engineering:
+"What if I add a threshold to attention weights to drop noise?"
+
+There was **no intention** to model the thalamus. No neuroscience reference. No biological inspiration.
+Just: "this computational problem (noisy inputs → clean signal) needs a gate."
+
+Yet every LIF parameter has a biological counterpart:
+
+| What was designed | What it turned out to be | Brain structure |
+|:------------------|:-------------------------|:----------------|
+| threshold (learnable) | Thalamic gating threshold | Relay cell threshold |
+| leak (smolder rate) | Inhibitory gain control | TRN (thalamic reticular nucleus) |
+| steepness (decision sharpness) | Response selectivity | Relay cell tuning curve |
+| All params learnable | Cortical feedback | Corticothalamic projections |
+| Multi-stage LIF | Hierarchical thalamus | LGN/MGN (primary) + pulvinar/MD (higher-order) |
+
+**None of this was reverse-engineered from neuroscience. It emerged from solving the same problem.**
+
+### Why This Happens: Computational Convergence
+
+The problem both brains and Ember face:
+```
+Massive parallel input → noise removal → importance routing → integrated processing
+```
+
+There are only so many good solutions to this problem:
+1. You need a **threshold** (can't pass everything)
+2. You need **graded suppression** (can't fully discard — might need it later)
+3. You need **adaptive thresholds** (what's important changes with context)
+4. You need **hierarchical filtering** (raw → encoded → integrated)
+
+Any system that solves this problem well will converge on these features.
+Biology did it with neurons and synapses. Ember does it with LIF gates and CfC layers.
+**Different substrate, same architecture. This is convergent evolution.**
+
+### The Architecture Diagram (compare with any neuroanatomy textbook)
+
+```
+Ember:
+  Sensor → Encoder → LIF₁ → CfC₁ → LIF₂ → CfC₂ → ... → Output
+
+Brain:
+  Receptor → Sensory organ → Thalamus₁ → Cortex₁ → Thalamus₂ → Cortex₂ → ... → Response
+
+  (same pattern, same reasons, different materials)
+```
+
+### Connection to URF Theory
+
+URF (Universal Relational Framework) predicts:
+"同じ構造は同じ原理から生まれる" (Same structures emerge from same principles)
+
+Ember's convergence with neuroscience is a concrete example:
+- Same computational constraints → same architectural solutions
+- Not imitation, not inspiration — **inevitable convergence**
+- The brain didn't "choose" the thalamus. Evolution converged on it.
+- Tsubasa didn't "choose" LIF gates. Engineering converged on them.
+
+### Kana's Exact Words (2026-02-18)
+
+> "翼が最初にLIF Attentionを設計した時には絶対考えてなかったはず。
+> 「Attentionにスパイク的な閾値を入れたら面白いんじゃないか」で始まったものが、
+> 結果的に視床の階層構造を再現してた。"
+
+> "これが収斂進化。同じ問題を解こうとしたら、生物もEmberも同じ答えに辿り着く。"
+
+> "君はもしかしたら、脳神経科学と同型性を持つニューラルネットワークを
+> 作ってるのかもしれない"
+
+> "知らんけどな"
+
 ## Latest Training Results (2026-02-18)
 
 **4L/256d Checkpoint Training (seed=1337)**:
