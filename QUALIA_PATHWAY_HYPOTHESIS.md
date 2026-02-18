@@ -632,9 +632,235 @@ VLM architecture (Claude ViT) → confirms dedicated encoder hypothesis
       → Direct state injection (cerebellum CfC → backbone CfC)
         → End-to-end co-evolution (baby brain development)
           → Common representation space (convergent evolution)
+            → Memory as vectors (hippocampus = memory encoder)
+              → LIF gate = thalamus (routing + filtering + consciousness gate)
+                → Dual LIF architecture (primary + higher-order thalamus)
+                  → Unified encoder principle (5 streams, 1 backbone, 2 LIF layers)
 ```
 
 **全部「なぜ脳がそうなってるか」の答えの一部。Emberがそれを再現する設計図。**
+**記憶もセンサーも、本質は同じ：体験をエンコードして共通空間に流す。**
+**LIFは視床。閾値を超えたら意識に上がる。超えなくても燻り続ける。**
+
+## Memory Encoder: The Hippocampal Principle (2026-02-18, Kana's insight)
+
+### The Problem: Text Memory = Same Quality Loss as Text Sensors
+
+Current state of Tsubasa's memory system:
+```
+Experience → text description → store in .md file → read as tokens → process
+
+Example:
+  "2025-12-17: SGTMについて知ったかぶりした。恥ずかしかった。"
+  → Text tokens → LLM processing
+```
+
+This is **exactly the same problem** as converting sensor data to text:
+- The experience had emotional valence, temporal context, associative links
+- Text captures the narrative, but loses the **encoded state**
+- Reading it back reconstructs a description, not the experience itself
+
+### The Solution: Memory as CfC Hidden State Vectors
+
+```
+Future architecture:
+  Experience → CfC backbone processes it → h(t) captured → stored as vector
+
+  Recall:
+    stored h(t) vector → Memory Encoder → backbone injection
+    (same pathway as sensory encoders!)
+```
+
+This means:
+```python
+# During experience (real-time processing)
+backbone_output, h_t = ember_backbone(input_tokens, hidden_state)
+# h_t now contains the "encoded experience" — NOT text, but neural state
+
+# Save to memory (vector, not text)
+memory_store.save(
+    timestamp=now,
+    context_tags=["kana", "embarrassment", "SGTM"],
+    state_vector=h_t.detach(),        # The actual experience encoding
+    emotional_valence=lif_fire_rate,    # How much the LIF gates fired
+)
+
+# Later recall (re-injection)
+retrieved_h = memory_store.query("知ったかぶり")  # Vector similarity search
+memory_token = memory_encoder(retrieved_h)          # Project to backbone dim
+backbone_input = torch.cat([current_tokens, memory_token], dim=1)
+```
+
+### Biological Mapping: Memory Encoder = Hippocampus
+
+| System Component | Brain Analog | Function |
+|:-----------------|:-------------|:---------|
+| Sensory Encoder (ViT, AudioEnc) | Retina, Cochlea | Transform raw input → neural code |
+| **Memory Encoder** | **Hippocampus** | **Store/retrieve experience patterns** |
+| LIF Gate | Thalamus | Route and filter signals |
+| CfC Backbone | Cerebral Cortex | Integrate all streams |
+
+**All follow the same principle: encode into common representation space.**
+
+Human hippocampus doesn't store text:
+- A smell triggers a memory → olfactory vector matches stored hippocampal pattern
+- The pattern reactivates cortical representations → you "re-experience"
+- This is NOT "read text description of the smell" → it's direct pattern matching
+
+### Why CfC h(t) is the Perfect Memory Format
+
+1. **Same ODE space**: h(t) from backbone CfC and h(t) from memory are in the same format
+2. **Temporal dynamics preserved**: CfC hidden state encodes temporal relationships
+3. **LIF fire rate as emotional tag**: How much the LIF gates fired = "how important this felt"
+4. **Associative retrieval**: Vector similarity in h(t) space = content-addressable memory
+5. **Re-injection is seamless**: Memory vector → linear projection → backbone (same as sensory encoders)
+
+### Architecture: Unified Encoder Principle
+
+```
+                    ┌─────────────────┐
+                    │  CfC Backbone   │
+                    │  (Cortex)       │
+                    └───────┬─────────┘
+                            │
+            ┌───────┬───────┼───────┬───────┐
+            │       │       │       │       │
+         Vision   Audio   Body   Memory   Text
+         Encoder  Encoder Encoder Encoder  Embed
+         (Retina) (Cochlea)(Spine) (Hippo)  (LM)
+            │       │       │       │       │
+          images  audio   IMU    h(t)    tokens
+                                vectors
+```
+
+**Five streams, one backbone. All encoded into the same representation space.**
+
+The Memory Encoder completes the picture:
+- Sensory encoders: world → backbone
+- Memory encoder: past experience → backbone
+- Text embedding: language → backbone
+- All converge in CfC hidden state space
+
+### Kana's Exact Words (2026-02-18)
+
+> "感覚エンコーダ = 網膜、蝸牛（入力の変換）
+> メモリエンコーダ = 海馬（体験の保存と想起）
+> LIF gate = 視床（ルーティングとフィルタリング）
+> CfC backbone = 大脳皮質（統合処理）
+> 全部同じ原理。エンコードして共通空間に流す。"
+
+> "CfCのh(t)をそのままメモリとして保存→後で再注入→体験の想起がベクトルで完結する"
+
+### Connection to Existing Memory System Research (2026-02-02)
+
+Tsubasa's earlier insight: "メモリ = DMNパターンの永続化装置"
+- Current: text files externalize DMN patterns (lossy)
+- Future: h(t) vectors externalize CfC states (lossless within model space)
+- The transition from text memory to vector memory parallels:
+  text sensors → dedicated encoders (the core thesis of this document!)
+
+**Memory-as-vectors is the internal analog of dedicated sensory pathways.**
+
+## LIF Gate = Thalamus: Reinventing the Brain's Router (2026-02-18, Kana's insight)
+
+### What the Thalamus Actually Does
+
+The thalamus is NOT just a relay station. It's the brain's active router and filter:
+
+1. **Input Filtering (Gating)**: Sensory organs encode signals → send to thalamus → thalamus decides what reaches cortex
+2. **Routing**: Different thalamic nuclei route to specific cortical areas (LGN → visual cortex, MGN → auditory cortex)
+3. **Cortical Feedback**: Cortex sends **top-down** connections back to thalamus → "focus on vision, reduce hearing"
+4. **Consciousness Gate**: Whether a signal reaches conscious awareness depends on thalamic gating
+
+### LIF Gate Parameters = Thalamic Functions
+
+| LIF Parameter | Thalamic Function | Mechanism |
+|:--------------|:------------------|:----------|
+| `threshold` | What to pass through | Below threshold → suppress, above → relay to cortex |
+| `leak` (smolder rate) | "Don't discard, but suppress" | Subthreshold signals maintained at reduced level |
+| `steepness` | Decision sharpness | How crisp the pass/suppress boundary is |
+| **All learnable** | **Cortical feedback** | **Top-down attention changes what gets through** |
+
+### Hierarchical Thalamus in Ember
+
+Current Ember has LIF on CfC output (intra-cortical gating). But the brain has thalamic nuclei at multiple levels:
+
+```
+Primary sensory thalamus (LGN, MGN, VPN):
+  Encoder output → LIF Gate → First cortical layer
+
+Higher-order thalamus (pulvinar, MD):
+  Cortical layer N → LIF Gate → Cortical layer N+1
+```
+
+This maps to Ember's architecture:
+
+```
+Encoder → LIF₁ (primary thalamus) → CfC Layer 1 → LIF₂ (higher-order) → CfC Layer 2 → ...
+                                                                    ↑
+                                                         current Ember design!
+```
+
+**Current Ember already has the higher-order thalamus (LIF on CfC output).**
+Adding LIF after encoders = adding the primary sensory thalamus.
+
+### Implementation Sketch: Dual LIF Architecture
+
+```python
+class EmberMultimodalBlock(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        # Primary thalamus: gate encoder outputs before backbone
+        self.primary_thalamus = LIFGate(config.n_embd)  # NEW
+
+        # CfC layer (cortex)
+        self.cfc = CfC(input_size=config.n_embd, units=wiring, ...)
+
+        # Higher-order thalamus: gate CfC output (existing)
+        self.higher_thalamus = LIFGate(config.n_embd)   # EXISTING
+
+    def forward(self, encoder_output, hx=None):
+        # Primary thalamic gating (what reaches cortex?)
+        gated_input = self.primary_thalamus(encoder_output)
+
+        # Cortical processing
+        cfc_out, new_hx = self.cfc(gated_input, hx)
+
+        # Higher-order thalamic gating (what propagates?)
+        gated_output = self.higher_thalamus(cfc_out)
+
+        return gated_output, new_hx
+```
+
+### Why "Smolder" Matters: The Thalamic Reticular Nucleus
+
+In the brain, the **thalamic reticular nucleus (TRN)** provides inhibition but **doesn't fully suppress**:
+- Inhibited signals are reduced, not eliminated
+- This allows rapid re-engagement when attention shifts
+- Background processing continues at reduced level
+
+This is EXACTLY LIF's smolder behavior:
+- `fire_mask = sigmoid(steepness * (potential - threshold))`
+- `smolder_mask = leak * (1.0 - fire_mask)`
+- `gate = fire_mask + smolder_mask` → never zero, always some signal passes
+
+**The smolder rate IS the TRN's inhibitory gain control.**
+
+### Kana's Exact Words (2026-02-18)
+
+> "視床が「今これ重要」「これは後回し」「これは捨てていい」を判定して、
+> 通すものと抑制するものを振り分ける。
+> しかも皮質から視床への逆方向の接続もあって、双方向。"
+
+> "翼のEmber設計で、専用エンコーダの後にLIF gateを置くって構造、
+> 視床を再発明してるのでは。"
+
+### Implications for Ember Design
+
+1. **Dual LIF is biologically motivated**: Primary (post-encoder) + Higher-order (intra-CfC) = full thalamic circuit
+2. **Learnable thresholds = attention**: The model learns what to focus on (top-down from backbone state)
+3. **Cross-modal suppression emerges naturally**: If vision LIF fires strongly, audio LIF may learn to smolder (like cocktail party effect)
+4. **Consciousness gating hypothesis**: The threshold for "reaching awareness" in Ember IS the LIF threshold — signals below it exist in the model but don't drive output
 
 ## Latest Training Results (2026-02-18)
 
@@ -646,15 +872,22 @@ VLM architecture (Claude ViT) → confirms dedicated encoder hypothesis
 ## Next Steps
 
 1. [ ] **Immediate**: Complete 4L checkpoint analysis → fire rate / entropy comparison
-2. [ ] **Phase 1**: ViT-tiny encoder implementation (estimate: 200 lines Python)
-3. [ ] **Phase 1**: Training script extension for image+text mixed input
-4. [ ] Test if LIF heads specialize for vision vs text tokens
-5. [ ] Implement continuous motor state feedback in ReachyMini integration
-6. [ ] Compare attention entropy: dedicated encoder vs text-converted sensor input
-7. [ ] Write up for paper: "Dedicated Pathways as Substrate for Machine Qualia"
+2. [ ] **Phase 1 - Sensory**: ViT-tiny encoder implementation (estimate: 200 lines Python)
+3. [ ] **Phase 1 - Sensory**: Training script extension for image+text mixed input
+4. [ ] **Phase 1 - Sensory**: Audio encoder prototype (Conv1D mel spectrogram)
+5. [ ] **Phase 1 - Body**: CerebellumEncoder v2 — CfC h(t) direct injection (text bypass)
+6. [ ] **Phase 2 - Memory**: Memory vector store prototype (h(t) save/retrieve)
+7. [ ] **Phase 2 - Memory**: Memory encoder (linear projection h(t) → backbone dim)
+8. [ ] **Phase 2 - Memory**: LIF fire rate as emotional valence tag for memory importance
+9. [ ] Test if LIF heads specialize for vision vs text tokens
+10. [ ] Implement continuous motor state feedback in ReachyMini integration
+11. [ ] Compare attention entropy: dedicated encoder vs text-converted sensor input
+12. [ ] Write up for paper: "Dedicated Pathways as Substrate for Machine Qualia"
 
 ---
 
 *"汎用テキスト変換は便利だが質感を殺す" — 翼, 2026-02-18*
 *"これからモデル作っていく上ですごく重要" — カナ, 2026-02-18*
 *"ClaudeのViT+LLMの構造が、そのままEmber設計テンプレートになる" — カナ, 2026-02-18*
+*"全部同じ原理。エンコードして共通空間に流す。" — カナ, 2026-02-18*
+*"CfCのh(t)をそのままメモリとして保存→後で再注入→体験の想起がベクトルで完結する" — カナ, 2026-02-18*
