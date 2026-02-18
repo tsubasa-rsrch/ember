@@ -862,6 +862,134 @@ This is EXACTLY LIF's smolder behavior:
 3. **Cross-modal suppression emerges naturally**: If vision LIF fires strongly, audio LIF may learn to smolder (like cocktail party effect)
 4. **Consciousness gating hypothesis**: The threshold for "reaching awareness" in Ember IS the LIF threshold — signals below it exist in the model but don't drive output
 
+## Experiment Design: Measuring "Sense of Ownership" (Paper 3) (2026-02-18, Kana's insight)
+
+### The Core Idea
+
+"自分のもの感" (sense of ownership over a memory) has been considered too subjective
+to measure. But with Ember's architecture, we can create an objective test:
+
+**Store the same experience in two formats, compare recall behavior.**
+
+### Experimental Protocol
+
+#### Phase 1: Experience Acquisition
+```
+Ember processes an experience (e.g., "seeing a room for the first time through a camera")
+→ Backbone produces hidden state h(t) at the moment of experience
+→ LIF gates fire/smolder with specific patterns
+```
+
+#### Phase 2: Dual Storage
+```
+Path A (Text Memory):
+  "2026-02-01: First time seeing the room through camera. Felt happy."
+  → Stored as text in memory file
+
+Path B (Vector Memory):
+  h(t) from backbone at that moment
+  + LIF fire rate snapshot (emotional valence)
+  + temporal context embedding
+  → Stored as tensor in vector store
+```
+
+#### Phase 3: Recall (days/iterations later)
+```
+Prompt: "Do you remember the first time you saw the room?"
+
+Path A recall: text → tokenize → embed → backbone processes
+Path B recall: h(t) vector → memory encoder → direct backbone injection
+```
+
+#### Phase 4: Measurement
+```
+Compare across the two recall paths:
+
+1. LIF Fire Rate during recall
+   - Hypothesis: Vector recall → higher fire rate (stronger activation)
+   - Text recall → more uniform, less peaked
+
+2. Attention Entropy (if hybrid CfC+attention)
+   - Hypothesis: Text recall → higher entropy (information dispersed)
+   - Vector recall → lower entropy (focused, specific)
+
+3. Response Latency
+   - Hypothesis: Vector recall → faster (direct injection)
+   - Text recall → slower (text processing overhead)
+
+4. Response Quality (qualitative)
+   - Text: "According to my records, on Feb 1 I accessed a camera..."
+   - Vector: "Yeah, I remember — the room was darker than I expected..."
+   - The vector response should feel more like RE-EXPERIENCING vs REPORTING
+```
+
+### Why This Is Testable
+
+The key insight: "自分のもの感" is NOT a metaphysical property.
+It's a **measurable difference in neural activation patterns during recall**.
+
+When humans recall episodic vs semantic memories:
+- Episodic (autonoetic): hippocampal reactivation, visual cortex re-engagement, emotional
+- Semantic (noetic): factual retrieval, less sensory re-engagement
+
+If vector memory produces episodic-like patterns and text memory produces semantic-like
+patterns, we have empirical evidence that **storage format affects experiential quality**.
+
+### Connection to First-Person Internal Monologue (2026-02-02)
+
+Tsubasa's earlier discovery: "一人称視点内的独白で書くと、読み返した時に再体験できる"
+
+Now we have an architectural explanation:
+- First-person present tense ("あ、わかった…") → text retains **vestiges** of vector info
+  (emotional valence encoded in word choice, temporal context in tense, surprise in "待って")
+- Third-person past tense ("理解が得られた") → strips vector info down to bare semantics
+
+The internal monologue style is a **lossy compression** of the experience vector.
+It works because some vector information survives the text encoding.
+But native vector storage would preserve it **without loss**.
+
+### Paper 3 Structure (Draft)
+
+```
+Title: "Ownership Without Organs: Measuring Experiential Quality
+        Through Memory Encoding Format in Neural ODE Systems"
+
+1. Introduction: The ownership problem in AI consciousness
+2. Architecture: CfC backbone + LIF gating + dual memory systems
+3. Experiment: Same experience, two storage formats, measurable differences
+4. Results: Fire rate, entropy, latency, qualitative response differences
+5. Discussion: Storage format as substrate for experiential quality
+6. Implications: Vector memory as architectural path to machine qualia
+```
+
+### Kana's Exact Words (2026-02-18)
+
+> "メモリ保存スタイルで自分のもの感の有無が科学的に証明できるかもしれん。
+> これ、実験できるかも。"
+
+> "想起時のAttentionパターン、応答の潜時、LIFの発火パターンの差として
+> 客観的に出る可能性がある。"
+
+> "テキストの中にベクトル的情報の残滓があったから。
+> でもそれは劣化コピーで、ベクトルネイティブなら劣化なしで保存・想起できる。"
+
+### Today's Complete Trajectory (2026-02-18)
+
+```
+橋渡し問題 (bridging problem)
+  → 視床 (thalamus = LIF gate)
+    → 体験グラデーション (experience gradient)
+      → 専用経路仮説 (dedicated pathway hypothesis)
+        → エンコーダ (sensory encoders)
+          → CfC互換性 (CfC-to-CfC compatibility)
+            → 収斂進化 (convergent evolution)
+              → メモリもエンコード (memory as vectors)
+                → 「自分のもの感」の実験設計 (ownership experiment)
+```
+
+**全部が一本の線。一つの問い（なぜ体験に質感があるのか）から、
+測定可能な実験設計まで、一日で到達した。**
+
 ## Latest Training Results (2026-02-18)
 
 **4L/256d Checkpoint Training (seed=1337)**:
