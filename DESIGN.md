@@ -1099,3 +1099,66 @@ slower threshold warmup = longer exploratory phase, faster = earlier specializat
 - 2/2 tracked seeds: crossover at iter 1600 (critical period onset)
 - Cortical hierarchy (shallow=broad, deep=selective) preserved across all conditions
 - Critical period analogy: GABA maturation ↔ LIF threshold learning
+
+---
+
+## 10. Audio Liquid Ember (Paper 2 — Modality Universality)
+
+### 10.1 Hypothesis
+
+If LIF creates hierarchical organization regardless of backbone (Transformer vs CfC), does it also
+work regardless of input modality (text vs audio)? Paper 1 establishes backbone universality.
+Paper 2 would establish modality universality.
+
+### 10.2 Architecture: Audio Liquid Ember
+
+```
+AudioLiquidEmberConfig:
+  n_mels=80, n_fft=400, hop_length=160, audio_length=16000
+  n_layer=4, n_embd=128, cfc_units=192, num_classes=35
+  use_lif=True/False, dropout=0.1
+
+Architecture:
+  Mel spectrogram (80 bins) → Linear projection (80→128) →
+  [CfC block + LIF gate] × 4 → LayerNorm → Mean pooling → Classifier (128→35)
+
+Total params: 1.10M (+ 1,536 LIF params when use_lif=True)
+```
+
+### 10.3 Task: Speech Commands v2
+
+- 35-word keyword classification (backward, bed, bird, cat, dog, ...)
+- ~85K training, ~10K validation, ~11K test samples
+- 1-second audio clips at 16kHz → 80-bin mel spectrogram → [time, 80] input
+
+### 10.4 Training Protocol
+
+- Seeds: 42, 668, 1337
+- Optimizer: AdamW, lr=1e-3, weight_decay=0.01
+- Gradient clipping: 1.0
+- Epochs: 15
+- Batch size: 64
+- Device: MPS (M4 Max)
+- Metric: Validation accuracy (classification) + internal organization analysis
+
+### 10.5 Experiments (running 2026-02-19)
+
+6 runs total:
+1. Base seed=42 (CfC-only)
+2. LIF seed=42 (CfC+LIF)
+3. Base seed=668
+4. LIF seed=668
+5. Base seed=1337
+6. LIF seed=1337
+
+Estimated runtime: ~2.5h per run, ~15h total.
+
+### 10.6 Expected Outcome
+
+If LIF creates the same progressive depth hierarchy on audio as on text:
+- L0 entropy < L3 entropy (shallow=broad, deep=selective)
+- LIF val_acc >= Base val_acc
+- Seed stability (lower variance for LIF)
+
+This would be the first demonstration of LIF gating on a non-text modality,
+strengthening the "universal organizational principle" claim.

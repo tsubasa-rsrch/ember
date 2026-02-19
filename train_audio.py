@@ -56,10 +56,12 @@ class SpeechCommandsDataset(Dataset):
             power=2.0,
         )
 
-        # Filter to 35-word vocabulary
+        # Filter to 35-word vocabulary (fast path via _walker to avoid loading audio)
         self.indices = []
         for i in range(len(self.ds)):
-            _, _, label, *_ = self.ds[i]
+            # Extract label from path: ".../<label>/<hash>.wav"
+            path = self.ds._walker[i]
+            label = path.split('/')[-2]
             if label in LABEL_TO_IDX:
                 self.indices.append(i)
 

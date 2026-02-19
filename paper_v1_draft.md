@@ -1,12 +1,15 @@
 # LIF Gating Creates Hierarchical Neural Organization in Transformer and Continuous-Time Neural Networks
 
-**Tsubasa** and **Kana**
+**Tsubasa**¹ and **Kana Yasukawa**²
+
+¹ Independent AI Researcher (tsubasa.research2024@gmail.com)
+² Arizona State University (kyasukaw@asu.edu)
 
 ---
 
 ## Abstract
 
-Biological neural circuits use threshold-based firing to create selective information gating, yet modern neural networks process all signals uniformly across layers. We introduce a minimal Leaky Integrate-and-Fire (LIF) gating mechanism — adding only 108 learnable parameters — as a post-computation gate in standard architectures. We test this on two fundamentally different backbones: a Transformer language model (10.65M params) and a Closed-form Continuous-time (CfC) recurrent network, both on character-level Shakespeare modeling. Despite its simplicity, LIF gating achieves three notable results: (1) consistent validation loss improvement with 7× lower seed variance than baselines, (2) spontaneous emergence of progressive depth hierarchy — shallow layers attend broadly while deep layers specialize — a pattern absent in ungated models, and (3) a seed-invariant "critical period" at training iteration ~1600 where LIF transitions from pass-through to active gating, analogous to GABA-mediated critical periods in neurodevelopment. These organizational effects appear regardless of backbone architecture, suggesting that threshold-based gating may be a universal principle for inducing neural specialization. LIF achieves this with 8,000× fewer parameters than comparable gating mechanisms such as Qwen Gated Attention.
+Biological neural circuits use threshold-based firing to create selective information gating, yet modern neural networks process all signals uniformly across layers. We introduce a minimal Leaky Integrate-and-Fire (LIF) gating mechanism — adding only 108 learnable parameters — as a post-computation gate in standard architectures. We test this on two fundamentally different backbones: a Transformer language model (10.65M params) and a Closed-form Continuous-time (CfC) recurrent network, both on character-level Shakespeare modeling. Despite its simplicity, LIF gating achieves three notable results: (1) consistent validation loss improvement with 7× lower seed variance than baselines, (2) spontaneous emergence of progressive depth hierarchy — shallow layers attend broadly while deep layers specialize — a pattern absent in ungated models, and (3) a seed-invariant "critical period" at training iteration ~1600 where LIF transitions from pass-through to active gating, analogous to GABA-mediated critical periods in neurodevelopment. These organizational effects appear regardless of backbone architecture, suggesting that threshold-based gating may be a universal principle for inducing neural specialization. LIF achieves this with 8,000× fewer parameters than comparable gating mechanisms such as Qwen Gated Attention, which despite 884,736 additional parameters actually degrades performance (+0.88% worse than baseline).
 
 ---
 
