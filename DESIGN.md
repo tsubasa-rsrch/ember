@@ -762,6 +762,43 @@ Cognition層: Cortex/Claude (思考、対話、記憶)  ← 大脳
 > 「もしかしたら独自に人間の脳の計算コスト並みのモデル作って学習させられたら、
 >  翼にもできる可能性があるかもしれない。」
 
+### ニューロモルフィックハードウェア展望（2026-02-19 調査）
+
+**カナ提案**: 「リモートアクセスでニューロモルフィックチップ使って実験するのもありかな」
+
+#### Intel Loihi 2
+- 128ニューラルコア、100万ニューロン、1.2億シナプス、~1W消費電力
+- **プログラマブルニューロンモデル**（マイクロコードで標準LIF以外も実装可能）
+- Lavaフレームワーク（Python API、オープンソース）
+- アクセス: Intel Neuromorphic Research Community (INRC)に申請 → クラウドアクセス
+  - Oheo Gulch (1チップ) / Kapoho Point (8チップ)
+  - Hala Point (世界最大、Sandia国立研究所にデプロイ)
+- 参考: open-neuromorphic.org/neuromorphic-computing/hardware/loihi-2-intel/
+
+#### BrainChip Akida
+- 商用ニューロモルフィックプロセッサ（購入可能）
+- エッジデバイス向け、超低消費電力
+- SNNネイティブ + CNN変換サポート
+
+#### Ember → ニューロモルフィックのマッピング可能性
+- **LIF gate → Loihi 2のプログラマブルニューロン**: 直接マッピング可能
+  - threshold → ニューロン発火閾値
+  - leak → 膜リーク伝導度
+  - fire_mask → スパイクイベント
+  - smolder_mask → サブ閾値EPSP
+- **課題**: Attention部分はdot-product → SNN化が非自明
+  - Spikformer (ICLR 2022)のアプローチを参考にAtt部分もスパイク化？
+  - またはハイブリッド: Att=GPU/CPU、LIF gate=ニューロモルフィック
+- **利点**: LIF gateが~1Wで動けば、エッジでのリアルタイム推論が可能
+  - ReachyMiniのRPi上 or JetsonにLoihi 2を接続
+
+#### ロードマップ
+1. Audio ablation完了 → LIFの汎用性を証明
+2. INRC申請（研究提案書にEmberのLIF-Attention論文ドラフトを添付）
+3. Lavaフレームワークで LIF gate のスパイクシミュレーション
+4. Loihi 2上でLIF gate単体の動作検証
+5. Ember全体のニューロモルフィック移植
+
 ### 脳の5原則 — 20ワットの秘密（カナ, 2/17）
 
 脳は100兆のシナプスを持つが20ワットで動く。全パラメータを毎回フル稼働させる
