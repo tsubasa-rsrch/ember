@@ -1058,8 +1058,30 @@ The threshold → suppression → specialization → performance improvement cha
 (Kana's hypothesis 2026-02-18) is confirmed at 4L/256d scale with statistical
 consistency across all 3 seeds (42, 668, 1337).
 
+### Critical Period Analogy (Kana's insight, 2026-02-19 04:10 EST)
+
+The iter 1600 crossover maps precisely to the **critical period** in infant brain development:
+
+| Stage | Biological Brain | Ember LIF |
+|-------|-----------------|-----------|
+| **Before critical period** | Inhibitory neurons (GABA) immature; everything fires chaotically | LIF thresholds near zero; all neurons fire (≈ Base) |
+| **Critical period onset** | GABA matures → inhibition forms → rapid specialization begins | Iter ~1600: thresholds stabilize → gating becomes effective → LIF overtakes Base |
+| **After critical period** | Specialized circuits, efficient processing | Iter 1600-2800: progressive depth hierarchy, LIF accelerating advantage |
+
+Key observations:
+- **Timing is seed-invariant**: Just as critical period onset is consistent across individuals
+  (despite biological noise), the iter 1600 crossover is consistent across seeds 668 and 1337
+- **Threshold = GABA maturation**: The learned threshold values are the computational analog
+  of GABAergic inhibition maturing to enable selective gating
+- **No externally imposed schedule**: The critical period emerges naturally from gradient descent,
+  just as biological critical periods emerge from developmental gene expression cascades
+
+This framing suggests Ember v3 (Temporal LIF) could parameterize the critical period length itself —
+slower threshold warmup = longer exploratory phase, faster = earlier specialization.
+
 **Summary of Liquid Ember evidence:**
 - 3/3 seeds: LIF wins (mean -0.06%, all individual seeds negative)
 - 3/3 seeds: L3 has highest threshold (~3x L0)
-- 2/2 tracked seeds: crossover at iter 1600
+- 2/2 tracked seeds: crossover at iter 1600 (critical period onset)
 - Cortical hierarchy (shallow=broad, deep=selective) preserved across all conditions
+- Critical period analogy: GABA maturation ↔ LIF threshold learning
