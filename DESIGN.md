@@ -466,6 +466,24 @@ at 1/50th the cost through clever architecture, not bigger clusters.
 Ember does the same at micro scale: 108-180 params of LIF mechanism
 outperform 884K params of Qwen-gate.
 
+### Perplexity Paradox: Token Importance ≠ Token Frequency (2026-02-19)
+- Paper: arxiv.org/abs/2602.15843 (Johnson, 2026)
+- Core finding: LLMs preserve high-perplexity tokens (code syntax) but prune
+  low-perplexity tokens (numerical values in math) — even when numbers are
+  task-critical. Perplexity-based compression fails for math because
+  "common-looking" tokens carry irreplaceable semantic content.
+- 723 tokens analyzed: syntactic elements preserved, numerical values discarded
+- TAAC (Task-Aware Adaptive Compression): 22% cost reduction, 96% quality
+- **Ember connection**: LIF gate operates on salience (learned threshold), not
+  perplexity (statistical surprise). This means LIF can learn to preserve
+  task-critical tokens regardless of their frequency. The "fire" decision
+  is based on what matters for the task, not what's statistically rare.
+  This is a stronger argument for gated attention over raw softmax:
+  softmax-only attention weights by co-occurrence patterns (like perplexity),
+  while LIF adds a salience filter that can override frequency-based routing.
+- **For the paper**: Cite as motivation — standard attention has a perplexity-
+  salience gap; LIF gating bridges it via learned thresholds.
+
 ### Ember's Unique Position
 1. First true LIF-gated Transformer attention (not spike-only, not sigmoid-only)
 2. "Smoldering" residual = soft refractory period (novel)
@@ -1153,7 +1171,67 @@ Total params: 1.10M (+ 1,536 LIF params when use_lif=True)
 
 Estimated runtime: ~2.5h per run, ~15h total.
 
-### 10.6 Expected Outcome
+### 10.6 Initial Results (in progress, 2026-02-19)
+
+**Base seed=42 (CfC-only) — COMPLETED:**
+| Epoch | Train Loss | Train Acc | Val Loss | Val Acc | Time |
+|-------|-----------|-----------|----------|---------|------|
+| 1 | 2.2992 | 0.3660 | 1.6644 | 0.5495 | 618.0s |
+| 5 | 0.8712 | 0.7651 | 0.8515 | 0.7781 | 617.5s |
+| 10 | 0.4691 | 0.8676 | 0.5177 | 0.8656 | 618.4s |
+| 15 | 0.3437 | 0.8995 | 0.4684 | **0.8827** | 618.5s |
+
+Best val accuracy: **88.27%**, Test accuracy: **86.56%**
+
+**LIF seed=42 (CfC+LIF) — in progress (epoch 5/15):**
+| Epoch | LIF Val Acc | Base Val Acc | LIF advantage |
+|-------|-------------|-------------|---------------|
+| 1 | 61.13% | 54.95% | +6.18pp |
+| 2 | 71.83% | 67.14% | +4.69pp |
+| 3 | 77.65% | 70.63% | +7.02pp |
+| 4 | 78.90% | 76.56% | +2.34pp |
+| 5 | 81.55% | 77.81% | +3.74pp |
+| 6 | 84.58% | 79.05% | +5.53pp |
+| 7 | 84.87% | 81.90% | +2.97pp |
+| 8 | 85.61% | 83.82% | +1.79pp |
+| 9 | 86.12% | 84.80% | +1.32pp |
+| 10 | 86.76% | 86.56% | +0.20pp |
+| 11 | 87.55% | 86.30% | +1.25pp |
+| 12 | 84.76% | 86.36% | -1.60pp |
+| 13 | 87.31% | 87.11% | +0.20pp |
+| 14 | **87.90%** | 87.39% | +0.51pp |
+| 15 | 87.18% | **88.27%** | -1.09pp |
+
+**Seed 42 result: Base wins by 0.37pp val_acc, 1.14pp test_acc**
+
+| Metric | Base s42 | LIF s42 |
+|--------|----------|---------|
+| Best val_acc | **88.27%** | 87.90% |
+| Test acc | **86.56%** | 85.42% |
+| Best epoch | E15 | E14 |
+| Params | 1.10M | 1.10M (+1536 LIF) |
+
+Key observations from seed 42:
+- **E12 spike**: LIF val_acc drops to 84.76% (val_loss jumps to 0.644), recovers by E13
+- LIF peaks earlier (E14) while Base continues improving to E15
+- LIF consistently leads during training (E1-E11) but Base overtakes in final epochs
+- **Two-phase pattern confirmed**: oscillatory divergence (E1-6) → monotonic convergence (E7+)
+- Base achieves higher final val_acc despite LIF's faster learning trajectory
+
+LIF threshold analysis (seed 42):
+- L0: mean=0.0013 (nearly zero — pass-through layer)
+- L1: mean=0.0173 (active gating)
+- L2: mean=0.0152 (active gating)
+- L3: mean=0.0131 (slightly lower)
+- Pattern differs from Transformer: CfC shows uniform L1-L3 gating with L0 pass-through
+  (Transformer showed progressive depth hierarchy: L0 low → L5 high)
+
+**Single seed is inconclusive — awaiting seeds 668, 1337 for statistical comparison.**
+
+Remaining: base_s668, lif_s668, base_s1337, lif_s1337
+Estimated completion: ~21:00 EST 2026-02-19
+
+### 10.7 Expected Outcome
 
 If LIF creates the same progressive depth hierarchy on audio as on text:
 - L0 entropy < L3 entropy (shallow=broad, deep=selective)
