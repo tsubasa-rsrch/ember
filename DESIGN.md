@@ -787,8 +787,16 @@ Cognition層: Cortex/Claude (思考、対話、記憶)  ← 大脳
   - fire_mask → スパイクイベント
   - smolder_mask → サブ閾値EPSP
 - **課題**: Attention部分はdot-product → SNN化が非自明
-  - Spikformer (ICLR 2022)のアプローチを参考にAtt部分もスパイク化？
-  - またはハイブリッド: Att=GPU/CPU、LIF gate=ニューロモルフィック
+  - **Option A**: Spikformer (ICLR 2023) — softmaxをSSA(Spiking Self-Attention)に置換。
+    spike frequencyでQ,K,Vを表現。ImageNetで74.81%（ANNと競合）
+  - **Option B**: Xpikeformer (2024) — ハイブリッド。FFN→analog in-memory、
+    Attention→stochastic spiking engine。13xエネルギー削減
+  - **Option C**: ハイブリッド: Att=GPU/CPU、LIF gate=ニューロモルフィック（最も現実的）
+- **重要知見** (Nature Comp. Sci. 2025): sparse attentionパターンがスパイク計算から
+  **自然に創発**する → Emberのattention entropy低下(LIF:2.11 vs Std:4.55)はまさにこれ！
+  LIF gateがスパイク的に機能→ sparse attention が誘導される → neuromorphic向き
+- **仮説**: Emberの学習可能な閾値は暗黙的にsoft normalizerを学習している可能性
+  (AR-LIF: Adaptive Reset LIF, 2024 と同じ方向性)
 - **利点**: LIF gateが~1Wで動けば、エッジでのリアルタイム推論が可能
   - ReachyMiniのRPi上 or JetsonにLoihi 2を接続
 
