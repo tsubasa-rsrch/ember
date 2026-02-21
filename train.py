@@ -90,7 +90,7 @@ def estimate_loss(model, train_data, val_data, device):
 
 
 def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
-                use_temporal_lif=False,
+                use_temporal_lif=False, use_head_persistent=False,
                 max_iters=MAX_ITERS, force_device=None, seed=1337):
     # Set seed for reproducibility across conditions
     torch.manual_seed(seed)
@@ -114,6 +114,7 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
         lif_mode=lif_mode,
         use_qwen_gate=use_qwen_gate,
         use_temporal_lif=use_temporal_lif,
+        use_head_persistent=use_head_persistent,
     )
 
     model = Ember(config).to(device)
@@ -122,10 +123,20 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
     os.makedirs(OUT_DIR, exist_ok=True)
     if use_qwen_gate:
         mode_str = "Qwen-gate"
+    elif use_temporal_lif and use_head_persistent and lif_mode == 'refractory':
+        mode_str = "Full-combo"
+    elif use_temporal_lif and use_lif and lif_mode == 'refractory':
+        mode_str = "Temporal+Refrac"
+    elif use_temporal_lif and use_head_persistent:
+        mode_str = "Temporal+Head"
+    elif use_head_persistent and lif_mode == 'refractory':
+        mode_str = "Refrac+Head"
     elif use_temporal_lif and use_lif:
         mode_str = "Temporal-LIF"
     elif use_temporal_lif:
         mode_str = "Temporal"
+    elif use_head_persistent:
+        mode_str = "Head-persist"
     elif not use_lif:
         mode_str = "Standard"
     elif lif_mode == 'fixed':
@@ -193,9 +204,9 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
     print(f"{'='*60}")
 
     # Print LIF parameters if applicable
-    if use_lif or use_temporal_lif:
+    if use_lif or use_temporal_lif or use_head_persistent:
         print(f"\n--- Learned LIF parameters ---")
-        lif_keywords = ['threshold', 'leak', 'steepness', 'refractory', 'cross_layer', 'temporal']
+        lif_keywords = ['threshold', 'leak', 'steepness', 'refractory', 'cross_layer', 'temporal', 'head_persistence', 'head_boost']
         for name, param in model.named_parameters():
             if any(k in name for k in lif_keywords):
                 if param.dim() == 0:
@@ -215,35 +226,41 @@ def main():
     parser.add_argument('--refractory', action='store_true', help='Train LIF v2.5 with refractory period')
     parser.add_argument('--temporal', action='store_true', help='Train v3 Temporal LIF (adaptive computation)')
     parser.add_argument('--qwen-gate', action='store_true', help='Train Qwen-style gated attention baseline')
+    parser.add_argument('--head-persistent', action='store_true', help='Train v3.5 per-head persistent state')
     parser.add_argument('--iters', type=int, default=MAX_ITERS, help='Max training iterations')
     parser.add_argument('--seed', type=int, default=1337, help='Random seed (same across conditions)')
     parser.add_argument('--device', type=str, default=None, help='Force device (cpu/mps/cuda)')
     args = parser.parse_args()
 
     if args.ablation:
-        # Full ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory vs Qwen-gate vs Temporal
-        # (name, use_lif, lif_mode, use_qwen_gate, use_temporal_lif)
+        # Full ablation: Standard vs Fixed-θ vs Learnable-θ vs Refractory vs combos
+        # (name, use_lif, lif_mode, use_qwen_gate, use_temporal_lif, use_head_persistent)
         conditions = [
-            ('Standard', False, 'learnable', False, False),
-            ('LIF-fixed', True, 'fixed', False, False),
-            ('LIF-learnable', True, 'learnable', False, False),
-            ('LIF-refractory', True, 'refractory', False, False),
+            ('Standard', False, 'learnable', False, False, False),
+            ('LIF-fixed', True, 'fixed', False, False, False),
+            ('LIF-learnable', True, 'learnable', False, False, False),
+            ('LIF-refractory', True, 'refractory', False, False, False),
         ]
         if args.qwen_gate:
-            conditions.append(('Qwen-gate', False, 'learnable', True, False))
+            conditions.append(('Qwen-gate', False, 'learnable', True, False, False))
         if args.temporal:
-            conditions.append(('Temporal-LIF', True, 'learnable', False, True))
+            conditions.append(('Temporal-LIF', True, 'learnable', False, True, False))
+        if args.head_persistent:
+            conditions.append(('Head-persist', True, 'learnable', False, False, True))
+            conditions.append(('Refrac+Head', True, 'refractory', False, False, True))
+        if args.temporal and args.head_persistent:
+            conditions.append(('Full-combo', True, 'refractory', False, True, True))
         n_cond = len(conditions)
         print("=" * 60)
         print(f"EMBER ABLATION STUDY ({n_cond} conditions)")
         print("=" * 60)
 
         results = {}
-        for name, use_lif, lif_mode, qwen, temporal in conditions:
+        for name, use_lif, lif_mode, qwen, temporal, head_p in conditions:
             print(f"\n>>> Training {name}...")
             hist, loss, t = train_model(
                 use_lif=use_lif, lif_mode=lif_mode, use_qwen_gate=qwen,
-                use_temporal_lif=temporal,
+                use_temporal_lif=temporal, use_head_persistent=head_p,
                 max_iters=args.iters, force_device=args.device,
                 seed=args.seed)
             results[name] = (loss, t, hist)
@@ -287,21 +304,22 @@ def main():
         else:
             print("Tie!")
     else:
-        if args.qwen_gate:
-            train_model(use_lif=False, use_qwen_gate=True,
-                       max_iters=args.iters, force_device=args.device, seed=args.seed)
-        elif args.temporal:
-            train_model(use_lif=True, use_temporal_lif=True,
-                       max_iters=args.iters, force_device=args.device, seed=args.seed)
-        elif args.refractory:
-            train_model(use_lif=True, lif_mode='refractory',
-                       max_iters=args.iters, force_device=args.device, seed=args.seed)
-        elif args.no_lif:
-            train_model(use_lif=False, max_iters=args.iters,
-                       force_device=args.device, seed=args.seed)
-        else:
-            train_model(use_lif=True, max_iters=args.iters,
-                       force_device=args.device, seed=args.seed)
+        # Determine config from flags
+        use_lif = not args.no_lif
+        lif_mode = 'refractory' if args.refractory else 'learnable'
+        use_qwen = args.qwen_gate
+        use_temporal = args.temporal
+        use_head_p = args.head_persistent
+
+        if use_qwen:
+            use_lif = False
+
+        train_model(use_lif=use_lif, lif_mode=lif_mode,
+                    use_qwen_gate=use_qwen,
+                    use_temporal_lif=use_temporal,
+                    use_head_persistent=use_head_p,
+                    max_iters=args.iters, force_device=args.device,
+                    seed=args.seed)
 
 
 if __name__ == '__main__':

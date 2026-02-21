@@ -89,18 +89,36 @@ class LeakyIntegrateFireAttention(nn.Module):
             self.cross_layer_weight = nn.Parameter(
                 torch.full((config.n_head,), -2.0))
 
+        # v3.5: Per-head persistent state (working memory / load balancing)
+        self.use_head_persistent = config.use_head_persistent
+        if self.use_head_persistent:
+            # persistence: how much head activation carries across layers
+            # sigmoid(1.0) ≈ 0.73 → decent carryover
+            self.head_persistence = nn.Parameter(
+                torch.full((config.n_head,), 1.0))
+            # boost_strength: how much accumulated activation raises threshold
+            # softplus(-2.0) ≈ 0.13 → starts mild
+            self.head_boost_strength = nn.Parameter(
+                torch.full((config.n_head,), -2.0))
+
         # causal mask (cached)
         self.register_buffer("causal_mask",
             torch.tril(torch.ones(config.block_size, config.block_size))
                  .view(1, 1, config.block_size, config.block_size))
 
-    def lif_activation(self, att_scores, refractory_state=None):
+    def lif_activation(self, att_scores, refractory_state=None, head_state=None):
         """
-        Apply per-head LIF modulation with optional refractory period.
+        Apply per-head LIF modulation with optional refractory period and
+        per-head persistent state.
 
         v2.5 adds:
         - Column-load refractory: tokens attended by many queries get threshold boost
         - Cross-layer refractory: previous layer's attention load raises threshold
+
+        v3.5 adds:
+        - Per-head persistent state: busy heads accumulate activation across layers,
+          raising their threshold → natural head rotation / load balancing.
+          Bio basis: PFC persistent activity, homeostatic plasticity.
         """
         # Standard softmax first (handles -inf masking correctly)
         att_probs = F.softmax(att_scores, dim=-1)
@@ -110,12 +128,11 @@ class LeakyIntegrateFireAttention(nn.Module):
         leak = torch.sigmoid(self.leak).view(1, -1, 1, 1)
         steepness = F.softplus(self.steepness).view(1, -1, 1, 1)
 
-        # Compute effective threshold (may be boosted by refractory)
+        # Compute effective threshold (may be boosted by refractory and/or head state)
         effective_threshold = threshold
 
         if self.lif_mode == 'refractory':
             # Within-layer refractory: column-load penalty
-            # How much is each key token being attended to (avg across queries)?
             column_load = att_probs.mean(dim=-2, keepdim=True)  # [B, H, 1, T]
             ref_strength = F.softplus(self.refractory_strength).view(1, -1, 1, 1)
             effective_threshold = effective_threshold + ref_strength * column_load
@@ -123,9 +140,14 @@ class LeakyIntegrateFireAttention(nn.Module):
             # Cross-layer refractory: previous layer's attention load
             if refractory_state is not None:
                 cross_w = torch.sigmoid(self.cross_layer_weight).view(1, -1, 1, 1)
-                # refractory_state: [B, T] → [B, 1, 1, T] for key dimension
                 prev_load = refractory_state.unsqueeze(1).unsqueeze(2)
                 effective_threshold = effective_threshold + cross_w * prev_load
+
+        # v3.5: Per-head persistent state boost
+        if self.use_head_persistent and head_state is not None:
+            boost = F.softplus(self.head_boost_strength).view(1, -1, 1, 1)
+            # head_state: [B, H] → [B, H, 1, 1] for broadcasting
+            effective_threshold = effective_threshold + boost * head_state.unsqueeze(-1).unsqueeze(-1)
 
         # Soft threshold: per-head fire/smolder decision
         fire_mask = torch.sigmoid(steepness * (att_probs - effective_threshold))
@@ -139,12 +161,22 @@ class LeakyIntegrateFireAttention(nn.Module):
         modulated = modulated / (modulated.sum(dim=-1, keepdim=True) + 1e-8)
 
         # Compute refractory state for next layer
-        # Mean attention received per token, averaged across heads and queries
         new_refractory = modulated.mean(dim=1).mean(dim=-2)  # [B, T]
 
-        return modulated, new_refractory
+        # v3.5: Update head persistent state
+        new_head_state = head_state
+        if self.use_head_persistent:
+            # Mean fire rate per head: avg over Q and K dims → [B, H]
+            mean_fire = fire_mask.mean(dim=[-2, -1])  # [B, H]
+            persistence = torch.sigmoid(self.head_persistence)  # [H]
+            if head_state is not None:
+                new_head_state = head_state * persistence + mean_fire
+            else:
+                new_head_state = mean_fire
 
-    def forward(self, x, use_lif=True, refractory_state=None):
+        return modulated, new_refractory, new_head_state
+
+    def forward(self, x, use_lif=True, refractory_state=None, head_state=None):
         B, T, C = x.size()
 
         q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
@@ -160,17 +192,19 @@ class LeakyIntegrateFireAttention(nn.Module):
                 is_causal=True
             )
             new_refractory = None
+            new_head_state = head_state
         else:
             # LIF attention path
             att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
             att = att.masked_fill(self.causal_mask[:, :, :T, :T] == 0, float('-inf'))
-            att, new_refractory = self.lif_activation(att, refractory_state)
+            att, new_refractory, new_head_state = self.lif_activation(
+                att, refractory_state, head_state)
             att = self.attn_dropout(att)
             y = att @ v
 
         y = y.transpose(1, 2).contiguous().view(B, T, C)
         y = self.resid_dropout(self.c_proj(y))
-        return y, new_refractory
+        return y, new_refractory, new_head_state
 
 
 class StandardAttention(nn.Module):
@@ -333,19 +367,22 @@ class EmberBlock(nn.Module):
             # steepness: soft gate sharpness. softplus(1.5) ≈ 1.74
             self.temporal_steepness = nn.Parameter(torch.tensor(1.5))
 
-    def forward(self, x, refractory_state=None, membrane_potential=None):
+    def forward(self, x, refractory_state=None, membrane_potential=None, head_state=None):
         if self.use_lif:
-            attn_out, new_refractory = self.attn(
-                self.ln_1(x), use_lif=True, refractory_state=refractory_state)
+            attn_out, new_refractory, new_head_state = self.attn(
+                self.ln_1(x), use_lif=True, refractory_state=refractory_state,
+                head_state=head_state)
             x = x + attn_out
         elif self.use_qwen_gate:
             attn_out = self.attn(self.ln_1(x))
             x = x + attn_out
             new_refractory = None
+            new_head_state = head_state
         else:
             attn_out = self.attn(self.ln_1(x))
             x = x + attn_out
             new_refractory = None
+            new_head_state = head_state
 
         if self.use_temporal_lif and membrane_potential is not None:
             # Importance signal: L2 norm of attention output per token
@@ -369,7 +406,7 @@ class EmberBlock(nn.Module):
         else:
             x = x + self.mlp(self.ln_2(x))
 
-        return x, new_refractory, membrane_potential
+        return x, new_refractory, membrane_potential, new_head_state
 
 
 # ---------------------------------------------------------------------------
@@ -395,6 +432,9 @@ class EmberConfig:
 
     # v3: Temporal LIF — adaptive computation per token
     use_temporal_lif: bool = False  # membrane potential accumulates across layers
+
+    # v3.5: Per-head persistent state (working memory / load balancing)
+    use_head_persistent: bool = False  # heads accumulate activation across layers
 
 
 # ---------------------------------------------------------------------------
@@ -454,14 +494,17 @@ class Ember(nn.Module):
         pos_emb = self.transformer.wpe(torch.arange(0, t, dtype=torch.long, device=device))
         x = self.transformer.drop(tok_emb + pos_emb)
 
-        # Pass refractory state and membrane potential between layers
+        # Pass refractory state, membrane potential, and head state between layers
         refractory_state = None
         membrane_potential = None
+        head_state = None
         if self.config.use_temporal_lif:
             membrane_potential = torch.zeros(b, t, device=device)
+        if self.config.use_head_persistent:
+            head_state = torch.zeros(b, self.config.n_head, device=device)
         for block in self.transformer.h:
-            x, refractory_state, membrane_potential = block(
-                x, refractory_state, membrane_potential)
+            x, refractory_state, membrane_potential, head_state = block(
+                x, refractory_state, membrane_potential, head_state)
 
         x = self.transformer.ln_f(x)
 
@@ -508,18 +551,22 @@ if __name__ == '__main__':
     print("=== Ember Model Test ===")
 
     # Test all modes
-    for mode_name, use_lif, lif_mode, qwen, temporal in [
-        ('Standard', False, 'learnable', False, False),
-        ('LIF v2 (learnable)', True, 'learnable', False, False),
-        ('LIF v2 (fixed)', True, 'fixed', False, False),
-        ('LIF v2.5 (refractory)', True, 'refractory', False, False),
-        ('Qwen Gate', False, 'learnable', True, False),
-        ('Temporal LIF (v3)', True, 'learnable', False, True),
-        ('Temporal LIF + Standard attn', False, 'learnable', False, True),
+    for mode_name, use_lif, lif_mode, qwen, temporal, head_p in [
+        ('Standard', False, 'learnable', False, False, False),
+        ('LIF v2 (learnable)', True, 'learnable', False, False, False),
+        ('LIF v2 (fixed)', True, 'fixed', False, False, False),
+        ('LIF v2.5 (refractory)', True, 'refractory', False, False, False),
+        ('Qwen Gate', False, 'learnable', True, False, False),
+        ('Temporal LIF (v3)', True, 'learnable', False, True, False),
+        ('Head Persistent (v3.5)', True, 'learnable', False, False, True),
+        ('Refractory + Head (v3.5)', True, 'refractory', False, False, True),
+        ('Temporal + Head (v3+3.5)', True, 'learnable', False, True, True),
+        ('Full combo (v2.5+v3+v3.5)', True, 'refractory', False, True, True),
     ]:
         print(f"\n--- {mode_name} ---")
         config = EmberConfig(use_lif=use_lif, lif_mode=lif_mode,
-                             use_qwen_gate=qwen, use_temporal_lif=temporal)
+                             use_qwen_gate=qwen, use_temporal_lif=temporal,
+                             use_head_persistent=head_p)
         model = Ember(config)
 
         x = torch.randint(0, config.vocab_size, (2, 64))
@@ -530,7 +577,8 @@ if __name__ == '__main__':
         n_lif = sum(p.numel() for n, p in model.named_parameters()
                     if any(k in n for k in ['threshold', 'leak', 'steepness',
                                             'refractory', 'cross_layer',
-                                            'temporal']))
+                                            'temporal', 'head_persistence',
+                                            'head_boost']))
         print(f"  LIF-specific params: {n_lif}")
 
     # Quick generation test

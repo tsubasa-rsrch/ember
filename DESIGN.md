@@ -381,6 +381,35 @@ Bio basis: Short-term plasticity / homeostatic control. Don't stop firing,
 reduce learning sensitivity temporarily → prevents over-specialization.
 Priority: **High** (zero inference cost, natural head diversity, regularization effect)
 
+### v3.5 Implementation: Per-Head Persistent State (2026-02-21)
+
+Implemented proposal #3 (Per-head persistent state / working memory).
+
+```python
+# Per-head learnable params (2 × n_head × n_layer):
+head_persistence = nn.Parameter(torch.full((n_head,), 1.0))   # sigmoid → ~0.73 carryover
+head_boost_strength = nn.Parameter(torch.full((n_head,), -2.0)) # softplus → ~0.13 boost
+
+# In lif_activation:
+# 1. Boost threshold for busy heads
+effective_threshold += softplus(boost_strength) * head_state  # [B, H] → threshold raise
+
+# 2. Compute attention with boosted threshold → fire_mask
+# 3. Update head state: accumulate firing across layers
+mean_fire = fire_mask.mean(dim=[-2, -1])  # [B, H]
+head_state = head_state * sigmoid(persistence) + mean_fire
+```
+
+Key properties:
+- **Combinable**: works alongside refractory (per-token) and temporal (per-token MLP gate)
+- **Inference-time dynamics**: head state changes during forward pass, not just training
+- **Load balancing**: busy heads "tire out", giving other heads a turn
+- **Total new params**: 72 (2 × 6 heads × 6 layers) = +0.0002% of model
+- **Orthogonal to**: refractory (per-token load), temporal (per-token compute)
+
+CLI: `python3 train.py --head-persistent [--refractory] [--temporal]`
+Ablation: `python3 train.py --ablation --head-persistent [--temporal]`
+
 ### v4: Selective Layer LIF (idea)
 Only apply LIF attention to layers where it helps most.
 v2 analysis shows most layers stay pass-through anyway.
