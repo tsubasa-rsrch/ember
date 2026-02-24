@@ -361,6 +361,8 @@ The cross-scale results (Section 3.7) reveal a non-trivial interaction between L
 
 **Biological parallel.** Cortical minicolumns require ~80-120 neurons per layer to sustain E/I balance and critical period dynamics (Hensch, 2005). Below this threshold, the circuit cannot support selective gating — inhibition becomes destructive rather than organizational. The thalamus filters cortical input precisely because cortical representations are massively redundant. A thalamus gating a cortex with insufficient neurons would degrade rather than improve computation — precisely the pattern we observe at medium scale.
 
+**Information-geometric perspective.** LIF gating can be interpreted as a projection operation on the embedding space: discarding dimensions that fall below a learned threshold. Recent work on Hilbert space embeddings for in-context prediction (Sreekumar & Weinberger, 2026) suggests that prediction quality depends on the dimensionality of the embedding space rather than vocabulary size. This aligns with our width threshold finding — when the embedding space is too narrow, projection-based filtering loses critical information, while sufficiently wide spaces absorb the filtering safely. A fuller theoretical treatment of LIF-as-projection is deferred to future work.
+
 ### 6.6 Remaining Limitations
 
 - **Single task**: Character-level Shakespeare is controlled but narrow.
@@ -401,6 +403,7 @@ LIF gating answers the question "why does the brain use spiking neurons?" not wi
 - Rubin, R. et al. (2017). Balanced excitation and inhibition are required for high-capacity noise-robust neuronal selectivity. *PNAS*, 114(44).
 - Thompson, E. (2007). *Mind in Life: Biology, Phenomenology, and the Sciences of Mind*. Harvard University Press.
 - Varela, F.J., Thompson, E. & Rosch, E. (1991). *The Embodied Mind*. MIT Press.
+- Sreekumar, S. & Weinberger, N. (2026). Quantum maximum likelihood prediction via Hilbert space embeddings. *arXiv:2602.18364*.
 - Zhou, Z. et al. (2023). Spikformer: When spiking neural network meets transformer. *ICLR 2023*.
 
 ---
