@@ -1,0 +1,24 @@
+[
+  {
+    "model_type": "cfc_base",
+    "mode_str": "CfC-only",
+    "seed": 42,
+    "n_params": 551530,
+    "best_val_loss": 2.2190303802490234,
+    "total_time": 79.17067694664001,
+    "history": [
+      {
+        "iter": 0,
+        "train_loss": 4.206669807434082,
+        "val_loss": 4.206082820892334,
+        "elapsed": 11.827409029006958
+      },
+      {
+        "iter": 199,
+        "train_loss": 2.2158548831939697,
+        "val_loss": 2.2190303802490234,
+        "elapsed": 78.90005612373352
+      }
+    ]
+  }
+]

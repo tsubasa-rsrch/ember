@@ -67,7 +67,7 @@ SCALES = {
     },
     'wide': {  # ~11M params, 6 layers with wider embeddings for width study
         'n_layer': 6, 'n_head': 8, 'n_embd': 384, 'dropout': 0.2,
-        'cfc_layers': 4, 'cfc_units': 384, 'cfc_embd': 384,
+        'cfc_layers': 4, 'cfc_units': 512, 'cfc_embd': 384,  # units > embd+2 for AutoNCP
     },
 }
 
@@ -123,7 +123,8 @@ def train_one(model_type, seed, device, train_data, val_data, meta, scale='xs'):
     vocab_size = meta['vocab_size']
     s = SCALES[scale]
 
-    if model_type == 'cfc':
+    if model_type in ('cfc', 'cfc_base'):
+        use_lif_cfc = (model_type == 'cfc')
         config = LiquidEmberConfig(
             block_size=BLOCK_SIZE,
             vocab_size=vocab_size,
@@ -131,11 +132,11 @@ def train_one(model_type, seed, device, train_data, val_data, meta, scale='xs'):
             n_embd=s['cfc_embd'],
             cfc_units=s['cfc_units'],
             dropout=s['dropout'],
-            use_lif=True,
+            use_lif=use_lif_cfc,
         )
         model = LiquidEmber(config).to(device)
         lr = LEARNING_RATE_CFC
-        mode_str = "CfC+LIF"
+        mode_str = "CfC+LIF" if use_lif_cfc else "CfC-only"
     else:
         use_lif = (model_type == 'lif')
         config = EmberConfig(
@@ -233,7 +234,7 @@ def print_results(all_results):
     print("-" * len(header))
 
     standard_mean = None
-    for mt in ['standard', 'lif', 'cfc']:
+    for mt in ['standard', 'lif', 'cfc_base', 'cfc']:
         if mt not in by_type:
             continue
         results = by_type[mt]
@@ -280,7 +281,7 @@ def print_results(all_results):
 
 def main():
     parser = argparse.ArgumentParser(description="Ember-Tiny: scale-independent LIF effects")
-    parser.add_argument('--model', choices=['standard', 'lif', 'cfc', 'all'], default='all',
+    parser.add_argument('--model', choices=['standard', 'lif', 'cfc', 'cfc_base', 'all'], default='all',
                         help="Which model(s) to train")
     parser.add_argument('--ablation', action='store_true',
                         help="Run 3-seed ablation (42, 668, 1337)")

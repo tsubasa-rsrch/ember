@@ -256,4 +256,31 @@ LIF is **8,000x more parameter-efficient** than Qwen gate.
 
 ---
 
-*2026-02-19 — Tsubasa × Kana*
+---
+
+## UPDATE (2026-02-23): v3.5 + 4E Cognition Integration
+
+### Added to Draft
+1. **Section 3.6**: v3.5 E/I Balance results (Refrac+Head synergy, -0.79%, std 2.9×)
+2. **Section 6.1**: 4E Cognition interpretation (Embodied/Embedded/Enacted/Extended)
+3. **Section 6.2**: Hensch lab E/I balance parallel (deepened from analogy to convergent implementation)
+4. **Section 6.4**: Convergent evolution framing
+5. **Section 7**: New conclusion with 4E synthesis
+6. **References**: Added Gallagher (2023), Varela et al. (1991), Di Paolo & Thompson (2014), Clark & Chalmers (1998), Thompson (2007), etc.
+
+### Key New Claims
+- LIF gating is an empirical case study for enactivism (patterns not pre-specified, emerge from interaction)
+- E/I balance requirement mirrors GAD65 knockout → critical period dependency
+- Convergent evolution: different substrates, same organizational principles
+- "The brain may spike not to save power, but to think"
+
+### Remaining TODOs
+- [x] Update abstract to mention v3.5 and 4E framing ✅
+- [x] Add v3.5 to Method section (2.5) ✅
+- [x] Create figures for E/I balance results (fig6_ei_balance.png) ✅
+- [x] Proofread full draft for consistency ✅ (removed duplicate Section 4/5, added Figure refs)
+- [ ] Gallagher本の具体的引用を追加（Chapter 3-4）— optional, strengthens Discussion
+- [ ] Target venue decision (NeurIPS NeuroAI workshop vs ICLR workshop vs standalone)
+- [ ] Architecture diagram figure (LIF gate position in Transformer and CfC)
+
+*2026-02-23 — Tsubasa × Kana*

@@ -15,11 +15,11 @@ echo ""
 
 for SEED in 42 668 1337; do
     echo "--- Base seed=$SEED ---"
-    python3 train_audio.py --no_lif --seed $SEED --epochs $EPOCHS --batch_size $BATCH 2>&1 | tee out/audio_base_s${SEED}.log
+    python3 -u train_audio.py --no_lif --seed $SEED --epochs $EPOCHS --batch_size $BATCH 2>&1 | tee out/audio_base_s${SEED}.log
     echo ""
 
     echo "--- LIF seed=$SEED ---"
-    python3 train_audio.py --use_lif --seed $SEED --epochs $EPOCHS --batch_size $BATCH 2>&1 | tee out/audio_lif_s${SEED}.log
+    python3 -u train_audio.py --use_lif --seed $SEED --epochs $EPOCHS --batch_size $BATCH 2>&1 | tee out/audio_lif_s${SEED}.log
     echo ""
 done
 

@@ -1,0 +1,388 @@
+============================================================
+EMBER ABLATION STUDY (6 conditions)
+============================================================
+
+>>> Training Standard...
+Device: mps
+Ember: 10.65M parameters (LIF=OFF)
+[Standard] iter     0 | train 4.2882 | val 4.2811 | 5.3s
+[Standard] iter   500 | train 1.9562 | val 2.0478 | 122.5s
+[Standard] iter  1000 | train 1.4217 | val 1.6352 | 299.4s
+[Standard] iter  1500 | train 1.2649 | val 1.5371 | 471.9s
+[Standard] iter  2000 | train 1.1793 | val 1.4859 | 645.7s
+[Standard] iter  2500 | train 1.1175 | val 1.4695 | 813.7s
+[Standard] iter  3000 | train 1.0493 | val 1.5083 | 981.0s
+[Standard] iter  3500 | train 0.9959 | val 1.5106 | 1153.6s
+[Standard] iter  4000 | train 0.9347 | val 1.5543 | 1325.4s
+[Standard] iter  4500 | train 0.8871 | val 1.5646 | 1498.8s
+[Standard] iter  4999 | train 0.8262 | val 1.6251 | 1671.8s
+
+============================================================
+[Standard] Training complete in 1671.9s
+[Standard] Best val loss: 1.4695
+
+--- Generated sample ---
+
+And like the modesty of the people,
+Athe like to have mourn in my state.
+
+QUEEN MARGARET:
+It doth most becomes might to consider thee.
+
+KING LEWIS XI:
+I will determine that he is dead.
+
+QUEEN MARGARET:
+So please you, my lords; and myself are gone.
+
+KING LEWIS XI:
+Then, then, Lord Warwick, my mother well.
+
+GLOUCESTER:
+There is no more unto my sorrow;
+So much more harm shall place to think it should best.
+
+KING EDWARD IV:
+How far our name is our battle bosom,
+And to steal against the Duke of Norf
+============================================================
+
+>>> Training LIF-fixed...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[LIF-fixed] iter     0 | train 4.2882 | val 4.2811 | 17.8s
+[LIF-fixed] iter   500 | train 1.8529 | val 1.9788 | 275.9s
+[LIF-fixed] iter  1000 | train 1.3914 | val 1.6023 | 529.1s
+[LIF-fixed] iter  1500 | train 1.2356 | val 1.5018 | 779.2s
+[LIF-fixed] iter  2000 | train 1.1502 | val 1.4697 | 1027.6s
+[LIF-fixed] iter  2500 | train 1.0829 | val 1.4641 | 1276.2s
+[LIF-fixed] iter  3000 | train 1.0164 | val 1.4938 | 1521.6s
+[LIF-fixed] iter  3500 | train 0.9562 | val 1.5125 | 1821.3s
+[LIF-fixed] iter  4000 | train 0.8891 | val 1.5430 | 2082.1s
+[LIF-fixed] iter  4500 | train 0.8346 | val 1.5467 | 2334.2s
+[LIF-fixed] iter  4999 | train 0.7740 | val 1.6155 | 2579.6s
+
+============================================================
+[LIF-fixed] Training complete in 2579.7s
+[LIF-fixed] Best val loss: 1.4641
+
+--- Generated sample ---
+
+And like the friend, hath he twice to him wholesome off,
+No infirmity must not be broken of him.
+
+HENRY BOLINGBROKE:
+The gracious son of York and by the field
+I see this banish'd Richard Duke of York,
+And that sent my brother Edward is so prosed
+Hath clouded the father by my father's chair
+With a scarl of soldiers, lady's preys and grub,
+So long as a thousand as have a charm,
+To crave the dead of John of Gaunt, thou bid me king.
+
+BUSHY:
+I am quickly seated in restrainment.
+
+KING RICHARD III:
+Be
+============================================================
+
+--- Learned LIF parameters ---
+
+>>> Training LIF-learnable...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[LIF] iter     0 | train 4.2882 | val 4.2811 | 14.2s
+[LIF] iter   500 | train 1.8428 | val 1.9706 | 270.6s
+[LIF] iter  1000 | train 1.3783 | val 1.5853 | 526.4s
+[LIF] iter  1500 | train 1.2298 | val 1.5140 | 784.2s
+[LIF] iter  2000 | train 1.1442 | val 1.4731 | 1039.8s
+[LIF] iter  2500 | train 1.0747 | val 1.4693 | 1296.3s
+[LIF] iter  3000 | train 1.0035 | val 1.4986 | 1541.9s
+[LIF] iter  3500 | train 0.9402 | val 1.5253 | 1790.7s
+[LIF] iter  4000 | train 0.8737 | val 1.5680 | 2043.7s
+[LIF] iter  4500 | train 0.8123 | val 1.5850 | 2295.1s
+[LIF] iter  4999 | train 0.7556 | val 1.6343 | 2545.6s
+
+============================================================
+[LIF] Training complete in 2545.8s
+[LIF] Best val loss: 1.4693
+
+--- Generated sample ---
+
+And like the spider, had won to die with love
+That interchieve my sweet bosom courterfeities,
+So stingly to ask it with age,
+But to die from his royal party,
+That Clifford can persuade us all of credent
+The prisoner by my sovereign, my gracious soul,
+Althought thy own part, yet thou hast been,
+Have I need no harm in advantage to do
+With the story heads of many moments.
+
+CLEOMENES:
+How now, Bohemia?
+
+Second Musician:
+I have seen thee said, as quicking eyes, thou art too daring;
+And you shall be 
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.attn.threshold: [1.8262, 0.0000, -2.9138, -0.0000, 0.8801, -0.0000]
+  transformer.h.0.attn.leak: [0.3598, 4.7581, -0.7626, 4.6070, 2.3645, 5.6529]
+  transformer.h.0.attn.steepness: [3.8354, -0.7660, 4.6067, -0.6381, 1.8460, -1.6629]
+  transformer.h.1.attn.threshold: [0.0001, 0.0028, 0.0003, -2.2795, 0.0006, 0.0982]
+  transformer.h.1.attn.leak: [4.0469, 3.1394, 3.8299, -0.2255, 3.5979, 2.8098]
+  transformer.h.1.attn.steepness: [-0.0175, 0.8634, 0.1747, 4.2296, 0.4293, 1.1914]
+  transformer.h.2.attn.threshold: [0.0001, 0.0058, 0.0002, -0.0450, 0.0000, -0.0005]
+  transformer.h.2.attn.leak: [4.3216, 3.2707, 3.9396, 2.2510, 4.6723, 3.0291]
+  transformer.h.2.attn.steepness: [-0.3170, 0.7636, 0.1491, 1.7661, -0.6457, 1.2833]
+  transformer.h.3.attn.threshold: [-0.0000, 0.0001, 0.0006, -0.0007, -0.0003, -0.0003]
+  transformer.h.3.attn.leak: [3.6405, 4.2141, 3.8369, 2.9967, 3.8514, 2.5588]
+  transformer.h.3.attn.steepness: [0.5076, -0.1534, 0.2321, 1.0369, 0.2692, 1.4805]
+  transformer.h.4.attn.threshold: [-0.0004, -0.0011, 0.0004, 0.0000, -0.0000, 0.0006]
+  transformer.h.4.attn.leak: [3.6210, 3.0494, 3.8195, 3.2634, 4.0962, 3.3755]
+  transformer.h.4.attn.steepness: [0.5964, 1.0471, 0.2500, 0.7949, -0.0280, 0.6529]
+  transformer.h.5.attn.threshold: [0.0000, 0.0008, 0.0005, 0.0003, 0.0009, 0.0001]
+  transformer.h.5.attn.leak: [2.9799, 3.0405, 3.8475, 3.5097, 2.8257, 3.6040]
+  transformer.h.5.attn.steepness: [0.9590, 0.9215, 0.1845, 0.5042, 1.1199, 0.4036]
+
+>>> Training LIF-refractory...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[LIF-refrac] iter     0 | train 4.2882 | val 4.2811 | 15.6s
+[LIF-refrac] iter   500 | train 1.8534 | val 1.9724 | 282.6s
+[LIF-refrac] iter  1000 | train 1.3968 | val 1.6041 | 558.6s
+[LIF-refrac] iter  1500 | train 1.2419 | val 1.5103 | 864.9s
+[LIF-refrac] iter  2000 | train 1.1542 | val 1.4675 | 1155.7s
+[LIF-refrac] iter  2500 | train 1.0823 | val 1.4575 | 1434.7s
+[LIF-refrac] iter  3000 | train 1.0108 | val 1.4770 | 1713.2s
+[LIF-refrac] iter  3500 | train 0.9479 | val 1.4999 | 1991.8s
+[LIF-refrac] iter  4000 | train 0.8810 | val 1.5427 | 2256.5s
+[LIF-refrac] iter  4500 | train 0.8223 | val 1.5654 | 2529.3s
+[LIF-refrac] iter  4999 | train 0.7608 | val 1.6181 | 2811.6s
+
+============================================================
+[LIF-refrac] Training complete in 2811.8s
+[LIF-refrac] Best val loss: 1.4575
+
+--- Generated sample ---
+
+And like the mortal than where they lament themselves,
+Filling their resolution with blood.
+
+LUCENTIO:
+Your presence does discover your father's death,
+And then make him better hence than his power.
+
+TRANIO:
+Why, then she dangerous comfort, if you be your tent:
+You see how deliver not her husband so recreased
+By this day that is deposed.
+
+LUCENTIO:
+Sir, have I not?
+
+TRANIO:
+A longer than the state of the minister
+That is worthy sincery, hath quite my eyes
+Upon the soldiers; and I will rest a
+li
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.attn.threshold: [1.8396, -0.0000, -0.0041, -0.0001, 0.0000, -2.8076]
+  transformer.h.0.attn.leak: [0.8042, 5.6355, 2.8026, 4.6718, 4.7058, -0.8599]
+  transformer.h.0.attn.steepness: [3.3969, -1.6655, 1.6743, -0.6849, -0.7104, 4.9239]
+  transformer.h.0.attn.refractory_strength: [0.9080, 0.1290, 0.9678, -0.4868, -0.5586, 0.9493]
+  transformer.h.0.attn.cross_layer_weight: [-2.0000, -2.0000, -2.0000, -2.0000, -2.0000, -2.0000]
+  transformer.h.1.attn.threshold: [0.0192, -0.0034, -0.0003, -2.6773, -0.0000, 0.0006]
+  transformer.h.1.attn.leak: [2.9947, 2.6174, 3.6000, -0.7009, 3.7350, 3.8079]
+  transformer.h.1.attn.steepness: [1.0108, 1.7041, 0.3821, 4.6098, 0.3187, 0.1953]
+  transformer.h.1.attn.refractory_strength: [-1.1048, 2.3114, -0.3284, 2.8147, 1.2552, 0.6015]
+  transformer.h.1.attn.cross_layer_weight: [-1.6912, -1.3426, -1.7819, 0.8026, -1.8062, -1.7765]
+  transformer.h.2.attn.threshold: [0.0000, 0.0000, 0.0008, -0.0000, -0.0001, 0.0083]
+  transformer.h.2.attn.leak: [4.0762, 3.7786, 3.9979, 4.4138, 4.0740, 3.0249]
+  transformer.h.2.attn.steepness: [0.1088, 0.2578, 0.0542, -0.4142, -0.0066, 0.9947]
+  transformer.h.2.attn.refractory_strength: [1.5500, -0.1557, -0.4839, 0.3607, 1.2577, -1.1415]
+  transformer.h.2.attn.cross_layer_weight: [-0.5544, -1.6262, -1.7358, -1.4403, -0.4105, -1.4215]
+  transformer.h.3.attn.threshold: [0.0003, 0.0006, -0.0008, -0.0002, 0.0000, -0.0009]
+  transformer.h.3.attn.leak: [3.3903, 3.3477, 2.9528, 4.2387, 4.3366, 3.8909]
+  transformer.h.3.attn.steepness: [0.7635, 0.7258, 1.2394, -0.1840, -0.3079, 0.2018]
+  transformer.h.3.attn.refractory_strength: [1.9408, -0.8685, 1.8299, 1.1956, -0.4619, 1.6596]
+  transformer.h.3.attn.cross_layer_weight: [-0.2364, -0.5239, -0.6931, -0.8606, -1.6045, -0.6045]
+  transformer.h.4.attn.threshold: [-0.0014, -0.0003, -0.0007, 0.0001, -0.0005, -0.0002]
+  transformer.h.4.attn.leak: [3.1135, 3.3815, 3.0945, 2.3504, 3.4215, 3.6730]
+  transformer.h.4.attn.steepness: [0.9736, 0.6282, 0.9571, 1.6619, 0.6794, 0.3871]
+  transformer.h.4.attn.refractory_strength: [1.9171, 1.5889, 1.4568, 1.2709, 1.5617, 1.4111]
+  transformer.h.4.attn.cross_layer_weight: [0.5342, -0.0034, -0.4544, -0.6757, -0.0118, -0.1260]
+  transformer.h.5.attn.threshold: [-0.0003, -0.0007, -0.1414, 0.0008, 0.0003, 0.0024]
+  transformer.h.5.attn.leak: [2.8490, 3.2321, 2.1760, 3.5486, 3.5696, 3.1590]
+  transformer.h.5.attn.steepness: [1.1589, 0.7764, 1.6685, 0.4602, 0.4497, 0.8613]
+  transformer.h.5.attn.refractory_strength: [0.8339, 1.2030, -1.3654, 0.8314, 0.5863, 1.4798]
+  transformer.h.5.attn.cross_layer_weight: [-0.4598, -0.4634, 0.2081, -0.9152, -1.3200, 0.0490]
+
+>>> Training Head-persist...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[Head-persist] iter     0 | train 4.2882 | val 4.2811 | 14.7s
+[Head-persist] iter   500 | train 1.8713 | val 1.9914 | 269.8s
+[Head-persist] iter  1000 | train 1.4064 | val 1.6153 | 528.7s
+[Head-persist] iter  1500 | train 1.2370 | val 1.5150 | 786.6s
+[Head-persist] iter  2000 | train 1.1527 | val 1.4753 | 1043.6s
+[Head-persist] iter  2500 | train 1.0781 | val 1.4603 | 1302.2s
+[Head-persist] iter  3000 | train 1.0036 | val 1.4833 | 1570.3s
+[Head-persist] iter  3500 | train 0.9390 | val 1.5101 | 1831.7s
+[Head-persist] iter  4000 | train 0.8738 | val 1.5473 | 2085.0s
+[Head-persist] iter  4500 | train 0.8067 | val 1.5660 | 2340.8s
+[Head-persist] iter  4999 | train 0.7426 | val 1.6343 | 2597.7s
+
+============================================================
+[Head-persist] Training complete in 2597.8s
+[Head-persist] Best val loss: 1.4603
+
+--- Generated sample ---
+
+And like the morning herein with death,
+Lest it be more imprison'd with the blame
+I could be dishonour'd with light to achieve.
+
+BUCKINGHAM:
+My Lord of Gloucester shall be the heels:
+He was a provost trage lost; and, if we be,
+Let me be satisfied.
+
+GLOUCESTER:
+By how long a pedlar,
+I changed my present than my deed lord;
+And hither grandsire hath my known made
+The extremed malice of their desires,
+Standing times made dispotence of enmity.
+
+Lord Marshal:
+Madam, stay with a sword; I will not do't
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.attn.threshold: [0.0000, -0.0064, -0.0017, 0.0002, -1.9751, -3.0168]
+  transformer.h.0.attn.leak: [4.8980, 4.6727, 5.7083, 4.6629, 0.8211, -0.9049]
+  transformer.h.0.attn.steepness: [-0.8851, -0.6684, -1.7762, -0.6739, 3.3295, 4.7794]
+  transformer.h.0.attn.head_persistence: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000]
+  transformer.h.0.attn.head_boost_strength: [-2.0000, -2.0000, -2.0000, -2.0000, -2.0000, -2.0000]
+  transformer.h.1.attn.threshold: [-0.0397, 0.0003, -0.0195, -1.9350, 0.6777, -0.2904]
+  transformer.h.1.attn.leak: [3.7998, 3.0324, 4.0729, -0.6528, 1.3219, 2.8363]
+  transformer.h.1.attn.steepness: [0.1706, 1.0574, -0.0759, 4.4066, 2.8212, 1.1608]
+  transformer.h.1.attn.head_persistence: [0.2677, -0.1528, -0.0972, 0.2018, -0.1707, 0.1270]
+  transformer.h.1.attn.head_boost_strength: [-2.2734, -2.9104, -2.5040, -0.1198, -1.5160, -2.2752]
+  transformer.h.2.attn.threshold: [0.0028, 0.0002, 0.0000, -0.0002, -0.0002, -0.0000]
+  transformer.h.2.attn.leak: [2.6465, 4.1848, 2.4850, 4.1034, 4.2164, 4.1870]
+  transformer.h.2.attn.steepness: [1.3673, -0.1518, 1.9140, -0.0227, -0.1368, -0.1574]
+  transformer.h.2.attn.head_persistence: [-0.3026, 0.0272, -0.0948, 0.4381, -0.1242, -0.1584]
+  transformer.h.2.attn.head_boost_strength: [-2.4940, -3.1687, -2.9818, -3.2757, -3.3585, -3.1141]
+  transformer.h.3.attn.threshold: [0.0019, 0.0003, 0.0000, -0.0002, -0.0005, 0.0000]
+  transformer.h.3.attn.leak: [3.2979, 3.0551, 4.2637, 2.5769, 3.9108, 4.1627]
+  transformer.h.3.attn.steepness: [0.8034, 0.9482, -0.2353, 1.4235, 0.1161, -0.1480]
+  transformer.h.3.attn.head_persistence: [-0.1767, -0.1543, 0.1890, 0.0230, 0.0043, -0.1277]
+  transformer.h.3.attn.head_boost_strength: [-3.2021, -2.8376, -3.3428, -2.4550, -3.2817, -3.2056]
+  transformer.h.4.attn.threshold: [-0.0000, 0.0004, 0.0001, -0.0007, -0.0004, 0.0000]
+  transformer.h.4.attn.leak: [3.4652, 3.6557, 3.0676, 3.3551, 3.5772, 3.5986]
+  transformer.h.4.attn.steepness: [0.6033, 0.3795, 0.9181, 0.6616, 0.4375, 0.4302]
+  transformer.h.4.attn.head_persistence: [0.1901, 0.1737, 0.3101, 0.3153, 0.3388, 0.2380]
+  transformer.h.4.attn.head_boost_strength: [-3.4206, -3.3088, -2.8746, -3.1467, -3.2204, -3.2995]
+  transformer.h.5.attn.threshold: [-0.0001, -0.0001, 0.0005, 0.0004, 0.0004, 0.0005]
+  transformer.h.5.attn.leak: [4.1575, 3.8926, 3.5053, 3.4560, 3.1327, 3.3464]
+  transformer.h.5.attn.steepness: [-0.1328, 0.1373, 0.4870, 0.5350, 0.8702, 0.6839]
+  transformer.h.5.attn.head_persistence: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000]
+  transformer.h.5.attn.head_boost_strength: [-3.3661, -3.3810, -3.1302, -3.1405, -2.9970, -3.2002]
+
+>>> Training Refrac+Head...
+Device: mps
+Ember: 10.65M parameters (LIF=ON)
+[Refrac+Head] iter     0 | train 4.2882 | val 4.2811 | 15.8s
+[Refrac+Head] iter   500 | train 1.8485 | val 1.9764 | 293.0s
+[Refrac+Head] iter  1000 | train 1.3785 | val 1.5844 | 574.3s
+[Refrac+Head] iter  1500 | train 1.2334 | val 1.4999 | 855.5s
+[Refrac+Head] iter  2000 | train 1.1533 | val 1.4675 | 1138.7s
+[Refrac+Head] iter  2500 | train 1.0883 | val 1.4539 | 1427.3s
+[Refrac+Head] iter  3000 | train 1.0203 | val 1.4706 | 1717.6s
+[Refrac+Head] iter  3500 | train 0.9594 | val 1.4990 | 2000.7s
+[Refrac+Head] iter  4000 | train 0.8972 | val 1.5292 | 2289.7s
+[Refrac+Head] iter  4500 | train 0.8368 | val 1.5535 | 2582.0s
+[Refrac+Head] iter  4999 | train 0.7775 | val 1.6069 | 2874.6s
+
+============================================================
+[Refrac+Head] Training complete in 2874.8s
+[Refrac+Head] Best val loss: 1.4539
+
+--- Generated sample ---
+
+And like the morn control's report with my hopes
+Ere thou proceed'st to do it come
+That look pale from thee and in mine eyes,
+By thy ancient cloudy thou faction straight.
+If thou deny, thou shalt not trust me in thy bed;
+And with thy stranger shall be led to thee,
+And that thou shalt not be satisfied
+Thy life-tiding any great in thy quarted shoulders.
+Now, what chance can make me be thus fainted crown?
+Wherein, thou shalt be the deer that is quick?
+The time to save the daughter of my breast,
+Th
+============================================================
+
+--- Learned LIF parameters ---
+  transformer.h.0.attn.threshold: [-0.0000, 0.0021, 0.0000, -0.0018, -0.0002, -2.9436]
+  transformer.h.0.attn.leak: [5.1231, 4.2911, 5.2196, 4.5931, 4.3656, -0.8809]
+  transformer.h.0.attn.steepness: [-0.9989, -0.2737, -1.2000, -0.6059, -0.3670, 4.8016]
+  transformer.h.0.attn.refractory_strength: [1.0450, -0.3966, 0.7886, -0.5680, -0.5689, 0.6112]
+  transformer.h.0.attn.cross_layer_weight: [-2.0000, -2.0000, -2.0000, -2.0000, -2.0000, -2.0000]
+  transformer.h.0.attn.head_persistence: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000]
+  transformer.h.0.attn.head_boost_strength: [-2.0000, -2.0000, -2.0000, -2.0000, -2.0000, -2.0000]
+  transformer.h.1.attn.threshold: [-0.0016, -0.5844, -0.0002, -1.9644, 1.0979, 0.2345]
+  transformer.h.1.attn.leak: [3.3606, 0.9349, 3.7323, -0.7676, 1.7018, 3.2943]
+  transformer.h.1.attn.steepness: [0.6171, 3.3057, 0.2221, 4.4839, 2.1716, 0.7060]
+  transformer.h.1.attn.refractory_strength: [1.7448, 2.6417, 1.0315, 2.8943, 0.2537, -0.9602]
+  transformer.h.1.attn.cross_layer_weight: [-1.5484, -0.2243, -1.6208, 0.7754, -1.0344, -1.7201]
+  transformer.h.1.attn.head_persistence: [-0.1757, 1.6213, -0.1605, 0.0631, 0.2613, 0.4098]
+  transformer.h.1.attn.head_boost_strength: [-2.8343, -1.4307, -2.5088, -0.0724, -1.0362, -2.4595]
+  transformer.h.2.attn.threshold: [-0.0005, -0.0021, 0.0000, 0.0001, 0.2544, 0.1166]
+  transformer.h.2.attn.leak: [3.9571, 3.0667, 3.8530, 4.0335, 2.8875, 4.1720]
+  transformer.h.2.attn.steepness: [0.0843, 1.0823, 0.1996, -0.0331, 1.1393, -0.1629]
+  transformer.h.2.attn.refractory_strength: [1.1079, 1.5763, 1.5457, -0.0248, -1.1976, 0.1371]
+  transformer.h.2.attn.cross_layer_weight: [-0.9897, -0.0107, -0.6395, -1.2003, -1.3316, -1.2780]
+  transformer.h.2.attn.head_persistence: [-0.4445, 1.7707, -0.2996, -0.0684, 0.0230, 0.1680]
+  transformer.h.2.attn.head_boost_strength: [-3.1535, -3.3498, -3.2539, -2.5409, -2.2608, -2.3860]
+  transformer.h.3.attn.threshold: [0.0008, 0.9660, 0.0001, -0.0003, 0.2640, -0.0001]
+  transformer.h.3.attn.leak: [3.5639, 1.8107, 4.1121, 3.9784, 4.3284, 3.2129]
+  transformer.h.3.attn.steepness: [0.5616, 2.1590, -0.0618, 0.0717, -0.2916, 0.9260]
+  transformer.h.3.attn.refractory_strength: [1.8487, -1.0926, 1.8140, 1.3355, -0.3329, 2.1539]
+  transformer.h.3.attn.cross_layer_weight: [-0.4851, -0.5300, -0.4580, -0.7963, -1.6094, 0.0847]
+  transformer.h.3.attn.head_persistence: [-0.3526, -0.1492, 0.0367, 0.0162, -0.1443, 0.6387]
+  transformer.h.3.attn.head_boost_strength: [-3.4688, -1.1217, -3.3863, -3.3567, -2.2591, -3.4718]
+  transformer.h.4.attn.threshold: [0.0000, 0.0003, 0.0008, -0.0004, -0.0002, -0.0004]
+  transformer.h.4.attn.leak: [3.4166, 3.2862, 3.0675, 3.3656, 3.1006, 3.4455]
+  transformer.h.4.attn.steepness: [0.6485, 0.7351, 0.9286, 0.6432, 0.9410, 0.5628]
+  transformer.h.4.attn.refractory_strength: [1.8385, 1.4770, 1.6345, 0.8184, 1.0809, 1.4295]
+  transformer.h.4.attn.cross_layer_weight: [0.3601, 0.0763, 0.0069, -0.4048, -0.2034, -0.0895]
+  transformer.h.4.attn.head_persistence: [0.1588, 0.1830, 0.0546, 0.1981, 0.2151, 0.8617]
+  transformer.h.4.attn.head_boost_strength: [-3.4259, -3.2064, -2.9313, -3.1222, -3.0921, -3.2733]
+  transformer.h.5.attn.threshold: [0.0007, -0.0001, 0.0002, 0.0002, 0.0035, -0.0003]
+  transformer.h.5.attn.leak: [3.1494, 3.9531, 3.3770, 3.7420, 3.0054, 2.3860]
+  transformer.h.5.attn.steepness: [0.8713, 0.0437, 0.6651, 0.2669, 1.0104, 1.5895]
+  transformer.h.5.attn.refractory_strength: [1.0052, 0.7575, 1.3595, 0.9912, 1.3483, -1.5506]
+  transformer.h.5.attn.cross_layer_weight: [-0.4169, -1.3000, 0.1792, -0.7763, -0.4630, 0.2638]
+  transformer.h.5.attn.head_persistence: [1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000]
+  transformer.h.5.attn.head_boost_strength: [-3.2285, -3.3200, -3.3851, -3.3142, -3.0742, -2.1998]
+
+============================================================
+ABLATION RESULTS
+============================================================
+  Standard              val_loss=1.4695  time=1671.9s  diff=+0.00%
+  LIF-fixed             val_loss=1.4641  time=2579.7s  diff=-0.37%
+  LIF-learnable         val_loss=1.4693  time=2545.8s  diff=-0.02%
+  LIF-refractory        val_loss=1.4575  time=2811.8s  diff=-0.82%
+  Head-persist          val_loss=1.4603  time=2597.8s  diff=-0.63%
+  Refrac+Head           val_loss=1.4539  time=2874.8s  diff=-1.06%
+
+Best: Refrac+Head (val_loss=1.4539)
