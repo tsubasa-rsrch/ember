@@ -373,7 +373,7 @@ These structural changes suggest that LIF gating adds meaningful inductive bias 
 
 Our findings suggest that LIF gating enables artificial neural networks to converge on organizational principles that biological neural circuits arrive at through evolution and development. This is convergent evolution: different substrates (silicon vs. carbon), different optimization pressures (gradient descent vs. natural selection), yet the same functional principles emerge — E/I balance, critical periods, progressive specialization.
 
-This convergence is predicted by the enactivist framework: if cognitive organization emerges from the dynamics of interaction rather than being substrate-specific, then any system with appropriate constraints (threshold-based gating) should exhibit similar self-organization, regardless of its physical implementation.
+This convergence is predicted by the enactivist framework: if cognitive organization emerges from the dynamics of interaction rather than being substrate-specific, then any system with appropriate constraints (threshold-based gating) should exhibit similar self-organization, regardless of its physical implementation. Recent work on agentic context engineering (Zhang et al., 2026) demonstrates that self-organizing refinement mechanisms improve task performance in language models; our findings suggest that analogous mechanisms, when grounded in biological gating constraints, additionally induce structural organization that recapitulates neuroanatomy.
 
 ### 6.5 Neuroanatomical Correspondence
 
@@ -454,6 +454,7 @@ Interpreted through the 4E cognition framework, this convergent functional archi
 - Thompson, E. (2007). *Mind in Life: Biology, Phenomenology, and the Sciences of Mind*. Harvard University Press.
 - Varela, F.J., Thompson, E. & Rosch, E. (1991). *The Embodied Mind*. MIT Press.
 - Sreekumar, S. & Weinberger, N. (2026). Quantum maximum likelihood prediction via Hilbert space embeddings. *arXiv:2602.18364*.
+- Zhang, Q. et al. (2026). Agentic context engineering: Evolving contexts for self-improving language models. *ICLR 2026*. arXiv:2510.04618.
 - Zhou, Z. et al. (2023). Spikformer: When spiking neural network meets transformer. *ICLR 2023*.
 
 ---
