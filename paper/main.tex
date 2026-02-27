@@ -430,11 +430,13 @@ The non-monotonic U-shaped pattern rules out simple explanations and points to t
 \subsection{Per-Head Threshold Differentiation}
 \label{sec:threshold}
 
-Analysis of learned LIF parameters reveals that not all heads learn equivalent thresholds. In the full-scale model (6L/6H), head L0H2 emerges as an extreme outlier: threshold $0.152$ (vs.\ mean $0.012$), leak $0.661$ (vs.\ mean $0.368$), and steepness $3.25$ (vs.\ mean $2.01$). This ``gatekeeper head'' pattern---where $\sim$25\% of heads per layer develop substantially higher thresholds---is robust across seeds and scales.
+We define a \textbf{gatekeeper head} as the head with the maximum learned threshold within a given layer. Analysis of learned LIF parameters reveals structured differentiation.
 
-A 3-seed experiment at XS scale (2L/4H) confirms that each layer consistently produces approximately one gatekeeper head, though which head assumes the role varies by random initialization. Interestingly, L1H2 shows consistent elevation across all three seeds, suggesting some positional structure.
+In the full-scale model (6L/6H), head L0H2 emerges as an extreme outlier: threshold $0.152$ (vs.\ layer mean $0.012$), leak $0.661$ (vs.\ mean $0.368$), and steepness $3.25$ (vs.\ mean $2.01$). All three parameters are extreme in the same head, suggesting coordinated specialization rather than independent noise.
 
-The $\sim$25\% gatekeeper ratio is notable given the 15--20\% ratio of inhibitory interneurons in biological cortex. While we do not claim mechanistic equivalence, this convergence---emerging from gradient descent without any explicit architectural constraint---further supports the thesis that threshold-based gating leads to convergent organizational principles (see Figures~\ref{fig:head-params} and~\ref{fig:threshold-seeds} in Appendix).
+A 3-seed experiment at XS scale (2L/4H) reveals the following pattern: in all three seeds, each layer contains exactly one head whose threshold is substantially larger than the others. The \emph{identity} of the gatekeeper head varies by seed---in Layer~0, the gatekeeper is H1 (seed~42), H0 (seed~668), and H3 (seed~1337). In Layer~1, the gatekeeper is H2 (seed~42) but H3 (seeds~668 and~1337). The structural role (one prominent gatekeeper per layer) is stable; the assignment is variable.
+
+Further experiments with more seeds, deeper models, and wider heads are needed to determine whether the ``one gatekeeper per layer'' pattern generalizes beyond the current 2L/4H configuration (see Figures~\ref{fig:head-params} and~\ref{fig:threshold-seeds} in Appendix).
 
 \subsection{Limitations}
 \begin{itemize}
@@ -531,14 +533,14 @@ Interpreted through the 4E cognition framework, this convergent functional archi
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/lif_head_parameters.png}
-\caption{\textbf{Per-head learned LIF parameters (6L/6H).} Heatmaps of threshold, leak, and steepness for each attention head. L0H2 emerges as an extreme outlier across all three parameters (threshold $0.152$, leak $0.661$, steepness $3.25$), functioning as a ``gatekeeper head.'' Early and late layers develop high-threshold heads; middle layers pass signals through---paralleling cortical laminar organization.}
+\caption{\textbf{Per-head learned LIF parameters (6L/6H).} Heatmaps of threshold, leak, and steepness for each attention head. L0H2 emerges as an extreme outlier across all three parameters (threshold $0.152$, leak $0.661$, steepness $3.25$), with coordinated extremity suggesting functional specialization rather than noise.}
 \label{fig:head-params}
 \end{figure}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/threshold_3seeds_xs.png}
-\caption{\textbf{Cross-seed threshold differentiation (XS, 2L/4H).} Learned threshold values across 3 seeds (42, 668, 1337). Each layer consistently produces $\sim$1 high-threshold ``gatekeeper'' head ($\sim$25\% ratio), though \emph{which} head assumes this role varies by seed. L1H2 shows consistent elevation across all seeds. The $\sim$25\% gatekeeper ratio mirrors the 15--20\% inhibitory interneuron ratio in biological cortex.}
+\caption{\textbf{Cross-seed threshold differentiation (XS, 2L/4H).} Learned threshold values across 3 seeds (42, 668, 1337). In these runs, each layer contains one head with a substantially higher threshold than the rest. The gatekeeper identity varies by seed (e.g., Layer~1 gatekeeper is H2 for seed~42, H3 for seeds~668 and~1337). The structural role is stable; the assignment is variable.}
 \label{fig:threshold-seeds}
 \end{figure}
 
