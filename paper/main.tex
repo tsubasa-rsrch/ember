@@ -71,7 +71,7 @@ Our key contributions are:
     \item \textbf{Critical period discovery}: LIF-equipped networks exhibit a sharp transition at $\sim$1600 training iterations where thresholds stabilize and head roles differentiate, analogous to GABA-driven cortical critical periods.
     \item \textbf{Functional head specialization}: Attention heads spontaneously differentiate into pointer, gatherer, and focuser roles---absent in standard training.
     \item \textbf{Spontaneous E/I balance}: Combining LIF with inhibitory mechanisms (refractory periods, head-level persistence) achieves optimal performance ($-0.79\%$), mirroring the requirement for both excitatory and inhibitory components in biological critical periods.
-    \item \textbf{Architecture-dependent effectiveness}: LIF consistently improves Transformers but has zero effect on CfC networks, recapitulating the thalamus's selective gating of cortical but not cerebellar processing.
+    \item \textbf{Architecture-dependent effectiveness}: LIF consistently improves Transformers but has zero effect on CfC networks, a pattern that parallels the thalamus's selective gating of cortical but not cerebellar processing.
     \item \textbf{Extreme parameter efficiency}: 108 parameters achieve comparable results to Qwen's gated attention \citep{yang2025qwen3} (884K parameters) at $8{,}000\times$ fewer parameters.
     \item \textbf{Cross-scale U-shaped width dependence}: A 5-point width sweep reveals a non-monotonic pattern with a critical threshold between 256d and 320d.
     \item \textbf{Variance reduction as primary signal}: Up to $7\times$ ($86\%$) cross-seed standard deviation reduction, suggesting LIF acts as a structural regularizer.
@@ -157,7 +157,7 @@ In LIF-equipped Transformers, deeper layers consistently learn higher thresholds
     \item Layer 5 (deep): High thresholds, selective processing---only strong signals pass.
 \end{itemize}
 
-This progressive hierarchy is \emph{absent} in standard training, where all layers show similar activation patterns. The pattern mirrors cortical organization: superficial layers perform broad feature detection while deep layers perform specialized computation.
+This progressive hierarchy is \emph{absent} in standard training, where all layers show similar activation patterns. The pattern is reminiscent of cortical organization, where superficial layers perform broad feature detection while deep layers perform specialized computation.
 
 In CfC networks, LIF also induces a depth gradient (L0: $0.0024 \to$ L3: $0.0076$, $3.2\times$ increase), but this structural change produces no performance benefit---depth hierarchy is necessary but not sufficient.
 
@@ -206,7 +206,7 @@ Standard & $1.4784 \pm 0.0104$ & --- \\
 \end{tabular}
 \end{table}
 
-Inhibitory mechanisms alone \emph{degrade} performance. Only their combination with excitatory LIF gating produces the best result ($-0.79\%$). This mirrors biological findings that critical periods require both excitatory and inhibitory components working together \cite{hensch2005critical}.
+Inhibitory mechanisms alone \emph{degrade} performance. Only their combination with excitatory LIF gating produces the best result ($-0.79\%$). This parallels biological findings that critical periods require both excitatory and inhibitory components working together \cite{hensch2005critical}.
 
 \subsection{Cross-Scale Width Dependence}
 \label{sec:width}
@@ -286,7 +286,7 @@ The pattern is unambiguous: LIF improves Transformers at every scale tested ($-0
     \item \textbf{CfC continuous-time dynamics} update hidden state sequentially through an ODE. Each state update is already a filtered integration of the input signal. Adding LIF on top of this is redundant: gating a signal that has already been gated.
 \end{itemize}
 
-This architectural distinction maps directly onto brain neuroanatomy (Section~\ref{sec:neuroanatomy}).
+This architectural distinction parallels brain neuroanatomy (Section~\ref{sec:neuroanatomy}).
 
 
 % ============================================================
@@ -354,7 +354,7 @@ The classical interpretation would be: ``LIF was designed $\to$ it forced E/I ba
 
 \subsection{Connection to Biological Critical Periods}
 
-The parallel between Ember's critical period and biological critical periods runs deeper than surface analogy:
+The parallel between Ember's critical period and biological critical periods extends across multiple dimensions:
 
 \begin{table}[h]
 \centering
@@ -385,11 +385,11 @@ The validation loss improvements are modest ($-0.75\%$ for Transformer) and abse
     \item Spontaneous E/I balance---absent in Standard
 \end{itemize}
 
-These structural changes suggest that LIF adds meaningful inductive bias that shapes \emph{how} the network organizes computation. This mirrors biology: the brain's hierarchical organization serves adaptability and efficiency, not necessarily peak performance on any single task.
+These structural changes suggest that LIF adds meaningful inductive bias that shapes \emph{how} the network organizes computation. This parallels a general principle in biology: hierarchical organization often serves adaptability and efficiency rather than peak performance on any single task.
 
 \subsection{Convergent Evolution}
 
-Our findings suggest that LIF gating enables artificial neural networks to converge on organizational principles that biological neural circuits arrive at through evolution and development. This is convergent evolution: different substrates (silicon vs.\ carbon), different optimization pressures (gradient descent vs.\ natural selection), yet the same functional principles emerge---E/I balance, critical periods, progressive specialization.
+Our findings suggest that LIF gating enables artificial neural networks to arrive at organizational principles that share functional similarities with those found in biological neural circuits. We interpret this as analogous to convergent evolution: different substrates (silicon vs.\ carbon), different optimization pressures (gradient descent vs.\ natural selection), yet similar functional patterns emerge---E/I balance, critical periods, progressive specialization. Whether these parallels reflect deep shared principles or surface-level coincidence remains an open question.
 
 \subsection{Neuroanatomical Correspondence}
 \label{sec:neuroanatomy}
@@ -410,7 +410,7 @@ Cerebellum & Sequential, predictive & No thalamic relay & LIF has no effect on C
 \end{tabular}
 \end{table}
 
-The \textbf{thalamus} serves as the brain's primary sensory gateway, filtering which signals reach cortical processing areas. Critically, the cerebellum receives input directly from the brainstem and spinal cord, \emph{bypassing} the thalamic filter \cite{schmahmann1997cerebrocerebellar}. LIF gating recapitulates this pattern: it effectively filters Transformer attention (parallel, cortex-like) but has no effect on CfC dynamics (sequential, cerebellum-like).
+The \textbf{thalamus} serves as the brain's primary sensory gateway, filtering which signals reach cortical processing areas. Critically, the cerebellum receives input directly from the brainstem and spinal cord, \emph{bypassing} the thalamic filter \cite{schmahmann1997cerebrocerebellar}. LIF gating parallels this pattern: it effectively filters Transformer attention (parallel, cortex-like) but has no effect on CfC dynamics (sequential, cerebellum-like).
 
 \subsection{Interpreting the Width Threshold}
 
@@ -454,7 +454,7 @@ Further experiments with more seeds, deeper models, and wider heads are needed t
 
 We introduced LIF gating, a minimal biologically-inspired mechanism that adds threshold-based selective filtering to standard neural architectures. Despite its extreme simplicity (108 parameters), LIF gating induces rich organizational structure in Transformer networks: progressive depth hierarchy, functional head specialization, seed-invariant critical periods, and spontaneous excitatory-inhibitory balance.
 
-Crucially, LIF gating is \textbf{not} universal---it consistently improves Transformer attention but has zero effect on CfC sequential dynamics. This architecture-dependent pattern recapitulates brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing. We did not design this correspondence---it emerged from simply asking ``does a threshold-based gate help?'' across two architectures.
+Crucially, LIF gating is \textbf{not} universal---it consistently improves Transformer attention but has zero effect on CfC sequential dynamics. This architecture-dependent pattern parallels brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing. We did not design this parallel---it emerged from simply asking ``does a threshold-based gate help?'' across two architectures.
 
 Interpreted through the 4E cognition framework, this convergent functional architecture suggests that efficient information processing under threshold-based gating constraints converges on the same organizational solution regardless of substrate. The brain may spike not to save power, but to organize parallel computation---and artificial networks independently discover the same principle.
 
@@ -512,7 +512,7 @@ Interpreted through the 4E cognition framework, this convergent functional archi
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/fig6_ei_balance.png}
-\caption{\textbf{v3.5 E/I balance discovery.} (Left) Mean val\_loss with error bars for 6 conditions. (Right) Seed stability showing std reduction factor. Inhibitory alone degrades; combined achieves best. Mirrors biological requirement for both E and I.}
+\caption{\textbf{v3.5 E/I balance discovery.} (Left) Mean val\_loss with error bars for 6 conditions. (Right) Seed stability showing std reduction factor. Inhibitory alone degrades; combined achieves best. Parallels biological requirement for both E and I.}
 \label{fig:ei}
 \end{figure}
 
