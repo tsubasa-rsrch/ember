@@ -108,11 +108,11 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold, $k$
 \subsection{Transformer: Full-Scale Ablation}
 \label{sec:transformer-full}
 
-All experiments use character-level Shakespeare (1.1M characters), 6-layer 12-head Transformer (10.6M parameters), 3000 training iterations, 3 random seeds (42, 668, 1337).
+All experiments use character-level Shakespeare (1.1M characters), 6-layer 12-head Transformer (42.7M parameters), 3000 training iterations, 3 random seeds (42, 668, 1337).
 
 \begin{table}[h]
 \centering
-\caption{Full-scale Transformer ablation (6L/12H/768d, 10.6M params). Mean $\pm$ std over 3 seeds.}
+\caption{Full-scale Transformer ablation (6L/12H/768d, 42.7M params). Mean $\pm$ std over 3 seeds.}
 \label{tab:full-ablation}
 \begin{tabular}{lcccc}
 \toprule
@@ -223,8 +223,8 @@ We test LIF across 5 width scales while controlling depth (6L) and head count (8
 \midrule
 XS & 2L/4H/128d & 0.42M & $1.6171 \pm 0.0060$ & $1.6155 \pm 0.0058$ & $-0.10\%$ \\
 Small & 6L/8H/192d & 4.26M & $1.5041 \pm 0.0016$ & $1.5094 \pm 0.0043$ & $+0.35\%$ \\
-Medium & 6L/8H/256d & 7.44M & $1.4787 \pm 0.0022$ & $1.4839 \pm 0.0037$ & $+0.35\%$ \\
-Mid & 6L/8H/320d & 7.44M & $1.4739 \pm 0.0050$ & $1.4700 \pm 0.0030$ & $\mathbf{-0.26\%}$ \\
+Medium & 6L/8H/256d & 4.8M & $1.4787 \pm 0.0022$ & $1.4839 \pm 0.0037$ & $+0.35\%$ \\
+Mid & 6L/8H/320d & 7.5M & $1.4739 \pm 0.0050$ & $1.4700 \pm 0.0030$ & $\mathbf{-0.26\%}$ \\
 Wide & 6L/8H/384d & 10.7M & $1.4862 \pm 0.0113$ & $1.4845 \pm 0.0067$ & $-0.12\%$ \\
 \bottomrule
 \end{tabular}
@@ -268,9 +268,9 @@ Combining Transformer and CfC results reveals a striking pattern: \textbf{LIF ef
 \textbf{Architecture} & \textbf{Scale} & \textbf{Params} & \textbf{Standard} & \textbf{+LIF} & \textbf{$\Delta$} \\
 \midrule
 Transformer & XS (2L/4H/128d) & 0.42M & 1.6171 & 1.6155 & $-0.10\%$ \\
-Transformer & Mid (6L/8H/320d) & 7.44M & 1.4739 & 1.4700 & $-0.26\%$ \\
+Transformer & Mid (6L/8H/320d) & 7.5M & 1.4739 & 1.4700 & $-0.26\%$ \\
 Transformer & Wide (6L/8H/384d) & 10.7M & 1.4862 & 1.4845 & $-0.12\%$ \\
-Transformer & Full (6L/12H/768d) & 10.6M & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
+Transformer & Full (6L/12H/768d) & 42.7M & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
 \midrule
 CfC & XS (2L/192u/128d) & 0.55M & 1.6375 & 1.6392 & $+0.10\%$ \\
 CfC & Wide (4L/512u/384d) & 8.95M & 1.4851 & 1.4852 & $+0.01\%$ \\
@@ -278,7 +278,7 @@ CfC & Wide (4L/512u/384d) & 8.95M & 1.4851 & 1.4852 & $+0.01\%$ \\
 \end{tabular}
 \end{table}
 
-The pattern is unambiguous: LIF improves Transformers at every scale tested ($-0.10\%$ to $-0.75\%$), while having zero effect on CfC at any scale ($+0.01\%$ to $+0.10\%$). The wide-scale comparison uses matched embedding dimensions (384d) and comparable parameter counts (10.7M vs 8.95M), isolating the backbone architecture as the sole variable.
+The pattern is unambiguous: LIF improves Transformers at every scale tested ($-0.10\%$ to $-0.75\%$), while having zero effect on CfC at any scale ($+0.01\%$ to $+0.10\%$). The wide-scale comparison (Transformer 10.7M vs CfC 8.95M, both 384d) uses matched embedding dimensions and comparable parameter counts, isolating the backbone architecture as the sole variable.
 
 \textbf{Why does LIF help Transformers but not CfC?} The key distinction is \emph{parallel vs sequential} information processing:
 \begin{itemize}
@@ -432,7 +432,7 @@ The non-monotonic U-shaped pattern rules out simple explanations and points to t
 
 We define a \textbf{gatekeeper head} as the head with the maximum learned threshold within a given layer. Analysis of learned LIF parameters reveals structured differentiation.
 
-In the full-scale model (6L/6H), head L0H2 emerges as an extreme outlier: threshold $0.152$ (vs.\ layer mean $0.012$), leak $0.661$ (vs.\ mean $0.368$), and steepness $3.25$ (vs.\ mean $2.01$). All three parameters are extreme in the same head, suggesting coordinated specialization rather than independent noise.
+In the wide-scale model (6L/6H/384d), head L0H2 emerges as an extreme outlier: threshold $0.152$ (vs.\ layer mean $0.012$), leak $0.661$ (vs.\ mean $0.368$), and steepness $3.25$ (vs.\ mean $2.01$). All three parameters are extreme in the same head, suggesting coordinated specialization rather than independent noise.
 
 A 3-seed experiment at XS scale (2L/4H) reveals the following pattern: in all three seeds, each layer contains exactly one head whose threshold is substantially larger than the others. The \emph{identity} of the gatekeeper head varies by seed---in Layer~0, the gatekeeper is H1 (seed~42), H0 (seed~668), and H3 (seed~1337). In Layer~1, the gatekeeper is H2 (seed~42) but H3 (seeds~668 and~1337). The structural role (one prominent gatekeeper per layer) is stable; the assignment is variable.
 
@@ -533,7 +533,7 @@ Interpreted through the 4E cognition framework, this convergent functional archi
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/lif_head_parameters.png}
-\caption{\textbf{Per-head learned LIF parameters (6L/6H).} Heatmaps of threshold, leak, and steepness for each attention head. L0H2 emerges as an extreme outlier across all three parameters (threshold $0.152$, leak $0.661$, steepness $3.25$), with coordinated extremity suggesting functional specialization rather than noise.}
+\caption{\textbf{Per-head learned LIF parameters (wide scale, 6L/6H/384d).} Heatmaps of threshold, leak, and steepness for each attention head. L0H2 emerges as an extreme outlier across all three parameters (threshold $0.152$, leak $0.661$, steepness $3.25$), with coordinated extremity suggesting functional specialization rather than noise.}
 \label{fig:head-params}
 \end{figure}
 
