@@ -72,7 +72,7 @@ Our key contributions are:
     \item \textbf{Functional head specialization}: Attention heads spontaneously differentiate into pointer, gatherer, and focuser roles---absent in standard training.
     \item \textbf{Spontaneous E/I balance}: Combining LIF with inhibitory mechanisms (refractory periods, head-level persistence) achieves optimal performance ($-0.79\%$), mirroring the requirement for both excitatory and inhibitory components in biological critical periods.
     \item \textbf{Architecture-dependent effectiveness}: LIF consistently improves Transformers but has zero effect on CfC networks, recapitulating the thalamus's selective gating of cortical but not cerebellar processing.
-    \item \textbf{Extreme parameter efficiency}: 108 parameters achieve comparable results to Qwen's gated attention (884K parameters) at $8{,}000\times$ fewer parameters.
+    \item \textbf{Extreme parameter efficiency}: 108 parameters achieve comparable results to Qwen's gated attention \citep{yang2025qwen3} (884K parameters) at $8{,}000\times$ fewer parameters.
     \item \textbf{Cross-scale U-shaped width dependence}: A 5-point width sweep reveals a non-monotonic pattern with a critical threshold between 256d and 320d.
     \item \textbf{Variance reduction as primary signal}: Up to $7\times$ ($86\%$) cross-seed standard deviation reduction, suggesting LIF acts as a structural regularizer.
     \item \textbf{4E cognition interpretation}: We map Ember's findings onto the Embodied, Embedded, Enacted, Extended framework, arguing for convergent functional architecture.
@@ -93,7 +93,7 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold, $k$
 
 \textbf{Gate position.} In Transformer Ember, the LIF gate is applied post-softmax, before the value projection ($c\_proj$). In Liquid Ember (CfC variant), it is applied post-hidden-state, before the residual connection.
 
-\textbf{Parameter count.} For 6-layer, 12-head Transformer: $2 \times (6 \times 9) = 108$ learnable parameters (one $\theta$ and one $k$ per gate unit). This is $8{,}000\times$ fewer than Qwen's gated attention ($884{,}736$ parameters) at the same gate position.
+\textbf{Parameter count.} For 6-layer, 12-head Transformer: $2 \times (6 \times 9) = 108$ learnable parameters (one $\theta$ and one $k$ per gate unit). This is $8{,}000\times$ fewer than Qwen's gated attention \citep{yang2025qwen3} ($884{,}736$ parameters) at the same gate position.
 
 \textbf{v3.5 extensions.} We additionally test:
 \begin{itemize}
@@ -324,7 +324,7 @@ Across all seeds and both backbones, deeper layers consistently learn higher thr
 
 \textbf{Spiking Transformers.} Spikformer \cite{zhou2023spikformer} and addition-only attention replace conventional attention with spike-based computation, targeting energy efficiency. Our approach differs fundamentally: we \emph{augment} standard attention with a lightweight gate, preserving the full computation while adding selective filtering.
 
-\textbf{Gated Attention.} Qwen Gated Attention (NeurIPS 2025 Best Paper) introduces $Y' = Y \odot \sigma(XW_\theta)$, a query-dependent sigmoid gate. At the same gate position, our LIF gate achieves comparable results with $8{,}000\times$ fewer parameters. The key difference is biological grounding: LIF uses a threshold-based fire/smolder paradigm.
+\textbf{Gated Attention.} Qwen Gated Attention \citep{yang2025qwen3} introduces $Y' = Y \odot \sigma(XW_\theta)$, a query-dependent sigmoid gate. At the same gate position, our LIF gate achieves comparable results with $8{,}000\times$ fewer parameters. The key difference is biological grounding: LIF uses a threshold-based fire/smolder paradigm.
 
 \textbf{Sparse Attention.} SeerAttention and NSA (2025) implement hierarchical block-level sparsity. LIF gating operates at finer granularity (per-token, per-head) and produces sparsity as an emergent property.
 
