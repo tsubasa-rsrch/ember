@@ -273,7 +273,9 @@ Wilcoxon signed-rank & $W = 3.0$ & $0.039^*$ \\
 \end{tabular}
 \end{table}
 
-Standard: $1.6167 \pm 0.0062$; LIF: $1.6156 \pm 0.0063$ ($\Delta = -0.068\%$, Cohen's $d = -1.02$). The effect is small in absolute terms but highly consistent: LIF improves 7 of 8 seeds, with the sole exception showing near-zero difference ($+0.0008$). Both parametric and non-parametric tests confirm significance at $\alpha = 0.05$. Larger scales remain at $n = 3$ and require additional seeds for statistical confirmation.
+Standard: $1.6167 \pm 0.0062$; LIF: $1.6156 \pm 0.0063$ ($\Delta = -0.068\%$, Cohen's $d = -1.02$). The effect is small in absolute terms but highly consistent: LIF improves 7 of 8 seeds, with the sole exception showing near-zero difference ($+0.0008$). Both parametric and non-parametric tests confirm significance at $\alpha = 0.05$.
+
+\textbf{Mid-scale replication (8 seeds).} We extended the same analysis to Mid scale (320d, 7.5M params). Standard: $1.4768 \pm 0.0072$; LIF: $1.4741 \pm 0.0051$ ($\Delta = -0.18\%$, LIF wins 5/8). However, paired $t$-test ($p = 0.235$) and Wilcoxon ($p = 0.250$) do not reach significance, with Cohen's $d = 0.46$ (medium effect). The LIF effect at mid-scale is directionally consistent but attenuated---consistent with the U-curve width dependence observed across scales (Section~\ref{sec:cross-arch}).
 
 \subsection{Cross-Architecture Analysis: Transformer vs CfC}
 \label{sec:cross-arch}
@@ -289,7 +291,7 @@ Combining Transformer and CfC results reveals a striking pattern: \textbf{LIF ef
 \textbf{Architecture} & \textbf{Scale} & \textbf{Params} & \textbf{Standard} & \textbf{+LIF} & \textbf{$\Delta$} \\
 \midrule
 Transformer & XS (2L/4H/128d) & 0.42M & 1.6171 & 1.6155 & $-0.10\%$ \\
-Transformer & Mid (6L/8H/320d) & 7.5M & 1.4739 & 1.4700 & $-0.26\%$ \\
+Transformer & Mid (6L/8H/320d) & 7.5M & 1.4768 & 1.4741 & $-0.18\%$ \\
 Transformer & Wide (6L/8H/384d) & 10.7M & 1.4862 & 1.4845 & $-0.12\%$ \\
 Transformer & Full (6L/12H/768d) & 42.7M & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
 \midrule
@@ -461,7 +463,7 @@ Further experiments with more seeds, deeper models, and wider heads are needed t
 
 \subsection{Limitations}
 \begin{itemize}
-    \item \textbf{Statistical power}: Most ablations use 3 random seeds, which is insufficient for significance testing. An extended 8-seed ablation at XS scale confirmed significance (paired $t$-test $p = 0.024$, Wilcoxon $p = 0.039$, Cohen's $d = -1.02$, LIF wins 7/8 seeds). However, larger scales remain at $n = 3$ where effects are not statistically distinguishable from noise. Power analysis indicates mid-scale requires $\sim$18 seeds for 80\% power.
+    \item \textbf{Statistical power}: Extended 8-seed ablations at XS confirmed significance ($p = 0.024$). Mid-scale (320d) at $n = 8$ shows directional consistency (LIF wins 5/8, $\Delta = -0.18\%$) but does not reach significance ($p = 0.235$, Cohen's $d = 0.46$). Power analysis indicates mid-scale requires $\sim$18 seeds for 80\% power given observed effect size.
     \item \textbf{Single task}: Character-level Shakespeare is controlled but narrow. Generalization to other domains (vision, speech, multi-task) is untested.
     \item \textbf{No non-biological control}: We compare LIF gating to no gating, but do not compare against non-biological alternatives (e.g., learned sigmoid gates with matched parameter count). This limits causal claims about biological grounding.
     \item \textbf{Entropy analysis}: Current measurements use checkpoint-based methods rather than controlled probing.
