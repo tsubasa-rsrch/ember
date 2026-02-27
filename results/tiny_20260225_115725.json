@@ -1,0 +1,18 @@
+[
+  {
+    "model_type": "standard",
+    "mode_str": "Standard",
+    "seed": 42,
+    "n_params": 7438720,
+    "best_val_loss": 4.235569477081299,
+    "total_time": 2.538681983947754,
+    "history": [
+      {
+        "iter": 0,
+        "train_loss": 4.242963790893555,
+        "val_loss": 4.235569477081299,
+        "elapsed": 2.1185898780822754
+      }
+    ]
+  }
+]

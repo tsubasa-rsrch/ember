@@ -32,8 +32,10 @@ def infer_scale(n_params):
         return 'xs'
     elif n_params < 3_000_000:
         return 'small'
-    elif n_params < 8_000_000:
+    elif n_params < 6_000_000:
         return 'medium'
+    elif n_params < 9_000_000:
+        return 'mid'
     elif n_params < 15_000_000:
         return 'wide'
     else:
@@ -95,14 +97,14 @@ def plot_scale(best_runs, scale, ax=None):
         ax.plot(common_iters, mean_vals, color=colors[mt], linewidth=2.0,
                 label=f"{labels[mt]} (mean)", marker='o', markersize=3)
 
-    n_layers = {'xs': 2, 'small': 4, 'medium': 6, 'wide': 6}.get(scale, '?')
+    n_layers = {'xs': 2, 'small': 4, 'medium': 6, 'mid': 6, 'wide': 6}.get(scale, '?')
     n_params = None
     for k, v in best_runs.items():
         if k[0] == scale and k[1] == 'standard':
             n_params = v['n_params']
             break
 
-    n_embd = {'xs': 128, 'small': 192, 'medium': 256, 'wide': 384}.get(scale, '?')
+    n_embd = {'xs': 128, 'small': 192, 'medium': 256, 'mid': 320, 'wide': 384}.get(scale, '?')
     title = f"Scale: {scale.upper()} ({n_layers}L/{n_embd}d, {n_params/1e6:.2f}M)" if n_params else f"Scale: {scale.upper()}"
     ax.set_title(title, fontsize=13)
     ax.set_xlabel('Training Iteration', fontsize=11)
@@ -120,12 +122,16 @@ def plot_delta(best_runs, ax=None):
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(8, 5))
 
-    scales = sorted(set(k[0] for k in best_runs),
-                    key=lambda s: {'xs': 0, 'small': 1, 'medium': 2, 'wide': 3, 'large': 4}.get(s, 99))
+    SCALE_ORDER = {'xs': 0, 'small': 1, 'medium': 2, 'mid': 3, 'wide': 4, 'large': 5}
+    SCALE_COLORS = {'xs': '#2196F3', 'small': '#FF9800', 'medium': '#9C27B0',
+                    'mid': '#E91E63', 'wide': '#4CAF50', 'large': '#607D8B'}
+    SCALE_LAYERS = {'xs': 2, 'small': 4, 'medium': 6, 'mid': 6, 'wide': 6}
+
+    scales = sorted(set(k[0] for k in best_runs), key=lambda s: SCALE_ORDER.get(s, 99))
     seeds = sorted(set(k[2] for k in best_runs))
 
     for scale in scales:
-        n_layers = {'xs': 2, 'small': 4, 'medium': 6, 'wide': 6}.get(scale, '?')
+        n_layers = SCALE_LAYERS.get(scale, '?')
 
         for seed in seeds:
             std_key = (scale, 'standard', seed)
@@ -143,7 +149,7 @@ def plot_delta(best_runs, ax=None):
             # Delta = LIF - Standard (negative = LIF better)
             delta = [l - s for l, s in zip(lif_vals, std_vals)]
             ax.plot(iters, delta, alpha=0.3, linewidth=0.8,
-                    color={'xs': '#2196F3', 'small': '#FF9800', 'medium': '#9C27B0', 'wide': '#4CAF50'}.get(scale, 'gray'))
+                    color=SCALE_COLORS.get(scale, 'gray'))
 
         # Mean delta
         all_deltas = []
@@ -159,7 +165,7 @@ def plot_delta(best_runs, ax=None):
             mean_delta = np.mean(all_deltas, axis=0)
             iters = [h['iter'] for h in best_runs[(scale, 'standard', seeds[0])]['history']]
             ax.plot(iters, mean_delta, linewidth=2.5,
-                    color={'xs': '#2196F3', 'small': '#FF9800', 'medium': '#9C27B0'}.get(scale, 'gray'),
+                    color=SCALE_COLORS.get(scale, 'gray'),
                     label=f"{scale.upper()} ({n_layers}L)", marker='o', markersize=3)
 
     ax.axhline(y=0, color='black', linestyle='--', alpha=0.5, linewidth=1)
@@ -167,6 +173,73 @@ def plot_delta(best_runs, ax=None):
     ax.set_xlabel('Training Iteration', fontsize=11)
     ax.set_ylabel('Val Loss Delta (LIF - Standard)', fontsize=11)
     ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+
+    return ax
+
+
+def plot_u_curve(best_runs, ax=None):
+    """Plot final LIF delta% vs embedding width — the paper's key figure."""
+    import matplotlib.pyplot as plt
+
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+
+    SCALE_ORDER = {'xs': 0, 'small': 1, 'medium': 2, 'mid': 3, 'wide': 4, 'large': 5}
+    WIDTHS = {'xs': 128, 'small': 192, 'medium': 256, 'mid': 320, 'wide': 384}
+
+    scales = sorted(set(k[0] for k in best_runs), key=lambda s: SCALE_ORDER.get(s, 99))
+    seeds = sorted(set(k[2] for k in best_runs))
+
+    widths = []
+    mean_deltas = []
+    all_seed_deltas = []  # for scatter
+
+    for scale in scales:
+        if scale not in WIDTHS:
+            continue
+        seed_deltas = []
+        for seed in seeds:
+            std_key = (scale, 'standard', seed)
+            lif_key = (scale, 'lif', seed)
+            if std_key in best_runs and lif_key in best_runs:
+                std_val = best_runs[std_key]['best_val_loss']
+                lif_val = best_runs[lif_key]['best_val_loss']
+                delta_pct = (lif_val - std_val) / std_val * 100
+                seed_deltas.append(delta_pct)
+
+        if seed_deltas:
+            w = WIDTHS[scale]
+            widths.append(w)
+            mean_deltas.append(np.mean(seed_deltas))
+            all_seed_deltas.append((w, seed_deltas))
+
+    # Individual seeds as scatter
+    for w, deltas in all_seed_deltas:
+        ax.scatter([w] * len(deltas), deltas, color='#90CAF9', s=40, zorder=3, alpha=0.7)
+
+    # Mean line
+    ax.plot(widths, mean_deltas, color='#1565C0', linewidth=2.5, marker='o',
+            markersize=8, zorder=4, label='Mean LIF effect (%)')
+
+    # Zero line
+    ax.axhline(y=0, color='black', linestyle='--', alpha=0.5, linewidth=1)
+
+    # Shade regions
+    ax.axvspan(0, 260, alpha=0.05, color='red', label='LIF hurts (under-parameterized)')
+    ax.axvspan(260, 500, alpha=0.05, color='green', label='LIF helps (sufficient width)')
+
+    # Annotations
+    for w, d in zip(widths, mean_deltas):
+        label = {128: 'XS\n2L', 192: 'S\n4L', 256: 'M\n6L', 320: 'Mid\n6L', 384: 'W\n6L'}.get(w, '')
+        ax.annotate(f'{label}\n{d:.2f}%', (w, d), textcoords='offset points',
+                    xytext=(0, 14), ha='center', fontsize=9, fontweight='bold')
+
+    ax.set_title('LIF Effect vs. Embedding Width (U-Curve)', fontsize=14)
+    ax.set_xlabel('Embedding Dimension (d)', fontsize=12)
+    ax.set_ylabel('Val Loss Delta (%, negative = LIF better)', fontsize=12)
+    ax.set_xlim(100, 420)
+    ax.legend(fontsize=9, loc='upper right')
     ax.grid(True, alpha=0.3)
 
     return ax
@@ -188,7 +261,7 @@ def main():
 
     best_runs = get_best_runs(results)
     scales = sorted(set(k[0] for k in best_runs),
-                    key=lambda s: {'xs': 0, 'small': 1, 'medium': 2, 'wide': 3, 'large': 4}.get(s, 99))
+                    key=lambda s: {'xs': 0, 'small': 1, 'medium': 2, 'mid': 3, 'wide': 4, 'large': 5}.get(s, 99))
 
     if args.scale:
         scales = [args.scale]
@@ -225,6 +298,15 @@ def main():
         plt.tight_layout()
         fig.savefig(os.path.join(FIGURES_DIR, 'tiny_lif_delta.png'), dpi=150, bbox_inches='tight')
         print(f"Saved: {FIGURES_DIR}/tiny_lif_delta.png")
+        plt.close()
+
+    # U-curve: final delta% vs width (paper main figure)
+    if len(scales_with_both) >= 3:
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+        plot_u_curve(best_runs, ax=ax)
+        plt.tight_layout()
+        fig.savefig(os.path.join(FIGURES_DIR, 'tiny_u_curve.png'), dpi=150, bbox_inches='tight')
+        print(f"Saved: {FIGURES_DIR}/tiny_u_curve.png")
         plt.close()
 
     print("Done!")

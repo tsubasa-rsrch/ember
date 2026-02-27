@@ -65,6 +65,10 @@ SCALES = {
         'n_layer': 6, 'n_head': 8, 'n_embd': 256, 'dropout': 0.2,
         'cfc_layers': 4, 'cfc_units': 320, 'cfc_embd': 256,
     },
+    'mid': {  # ~8M params, 6 layers with 320d for width midpoint (U-curve valley hunt)
+        'n_layer': 6, 'n_head': 8, 'n_embd': 320, 'dropout': 0.2,
+        'cfc_layers': 4, 'cfc_units': 384, 'cfc_embd': 320,
+    },
     'wide': {  # ~11M params, 6 layers with wider embeddings for width study
         'n_layer': 6, 'n_head': 8, 'n_embd': 384, 'dropout': 0.2,
         'cfc_layers': 4, 'cfc_units': 512, 'cfc_embd': 384,  # units > embd+2 for AutoNCP
@@ -289,8 +293,8 @@ def main():
                         help="Random seed (single run)")
     parser.add_argument('--iters', type=int, default=None,
                         help="Override MAX_ITERS")
-    parser.add_argument('--scale', choices=['xs', 'small', 'medium', 'wide'], default='xs',
-                        help="Model scale preset (xs=0.4M, small=2M, medium=5M, wide=14M)")
+    parser.add_argument('--scale', choices=['xs', 'small', 'medium', 'mid', 'wide'], default='xs',
+                        help="Model scale preset (xs=0.4M, small=2M, medium=5M, mid=8M, wide=14M)")
     args = parser.parse_args()
 
     global MAX_ITERS
