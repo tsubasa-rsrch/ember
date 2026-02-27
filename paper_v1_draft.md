@@ -238,28 +238,30 @@ A re-run with seed 1337 confirmed robustness: Refrac+Head achieved -1.12% vs Sta
 
 ### 3.7 Cross-Scale Experiments (Ember-Tiny)
 
-To determine whether LIF gating is scale-dependent, we ran 24 training runs across 4 model scales (see Section 2.6). Results reveal a non-trivial interaction between LIF effectiveness, model depth, and representation width:
+To determine whether LIF gating is scale-dependent, we ran 30 training runs across 5 model scales (see Section 2.6). Results reveal a non-trivial interaction between LIF effectiveness, model depth, and representation width:
 
 | Scale | Config | Params | Std Mean±Std | LIF Mean±Std | Delta | Wins |
 |-------|--------|--------|-------------|-------------|-------|------|
 | XS | 2L/4H/128d | 0.42M | 1.6171±0.0060 | 1.6155±0.0058 | **-0.10%** | **3/3** |
 | Small | 4L/4H/192d | 1.81M | 1.5106±0.0076 | 1.5129±0.0062 | +0.15% | 2/3 |
 | Medium | 6L/8H/256d | 4.77M | 1.4736±0.0022 | 1.4788±0.0037 | +0.35% | 0/3 |
+| Mid | 6L/8H/320d | 7.44M | 1.4739±0.0050 | 1.4700±0.0030 | **-0.26%** | **3/3** |
 | Wide | 6L/8H/384d | 10.7M | 1.4862±0.0113 | 1.4845±0.0067 | **-0.12%** | **2/3** |
 
-Including the full-scale model from Section 3.1 (6L/12H/768d, -0.75%, 3/3 wins), the LIF effect traces a **U-shaped curve** across width: beneficial at xs (128d), diminishing through small (192d) and medium (256d), then recovering at wide (384d) and strengthening at full (768d).
+Including the full-scale model from Section 3.1 (6L/12H/768d, -0.75%, 3/3 wins), the LIF effect traces a **U-shaped curve** across width: beneficial at xs (128d), diminishing through small (192d) and medium (256d), then recovering sharply at mid (320d) and continuing through wide (384d) to full (768d).
 
-**The critical controlled comparison.** Medium and Wide share depth (6L) and head count (8H), differing only in n_embd (256 vs 384). At 256d, LIF hurts (+0.35%, 0/3). At 384d, LIF helps (-0.12%, 2/3). This isolates **width** — not depth, not head count — as the decisive variable.
+**The critical controlled comparison.** Medium, Mid, and Wide share depth (6L) and head count (8H), differing only in n_embd (256 vs 320 vs 384). At 256d, LIF hurts (+0.35%, 0/3). At 320d, LIF helps (-0.26%, 3/3). At 384d, LIF helps (-0.12%, 2/3). This isolates **width** — not depth, not head count — as the decisive variable, with the crossover occurring between 256d and 320d.
 
 **Variance reduction is the stronger signal.** At wide scale, the mean improvement is modest (-0.12%), but the cross-seed standard deviation drops 41% (0.0113 → 0.0067). This pattern is consistent across all scales where LIF helps:
 
 | Scale | Std σ | LIF σ | σ reduction |
 |-------|-------|-------|-------------|
 | XS (128d) | 0.0060 | 0.0058 | 3% |
+| Mid (320d) | 0.0050 | 0.0030 | **40%** |
 | Wide (384d) | 0.0113 | 0.0067 | **41%** |
 | Full (768d) | 0.0104 | 0.0015 | **86%** |
 
-Where LIF hurts (Medium, 256d), variance *increases* (0.0022 → 0.0037, +68%). LIF gating serves a dual role — improving mean performance and stabilizing training — but only above a critical width threshold.
+Where LIF hurts (Medium, 256d), variance *increases* (0.0022 → 0.0037, +68%). Where LIF helps, variance consistently decreases: 40% at 320d, 41% at 384d, 86% at 768d. LIF gating serves a dual role — improving mean performance and stabilizing training — but only above a critical width threshold between 256d and 320d.
 
 ### 3.8 Cross-Architecture Analysis: Transformer vs CfC
 
@@ -268,6 +270,7 @@ Combining Transformer and CfC results across scales reveals a striking pattern: 
 | Architecture | Scale | Params | Standard | +LIF | LIF Δ |
 |---|---|---|---|---|---|
 | Transformer | XS (2L/4H/128d) | 0.42M | 1.6171 | 1.6155 | **-0.10%** |
+| Transformer | Mid (6L/8H/320d) | 7.44M | 1.4739 | 1.4700 | **-0.26%** |
 | Transformer | Wide (6L/8H/384d) | 10.7M | 1.4862 | 1.4845 | **-0.12%** |
 | Transformer | Full (6L/12H/768d) | 10.6M | 1.4784 | 1.4673 | **-0.75%** |
 | CfC | XS (2L/192u/128d) | 0.55M | 1.6375 | 1.6392 | +0.10% |
@@ -400,9 +403,15 @@ The cross-scale results (Section 3.7) reveal a non-trivial interaction between L
 
 2. **Deep-narrow (medium, 6L/256d)**: LIF *fails*. Deeper networks propagate information through more gates, amplifying information loss at each stage. With only 256 dimensions, the representation lacks redundancy to absorb this filtering — every discarded dimension matters.
 
-3. **Deep-wide (wide 384d, full 768d)**: LIF succeeds again, now enabling the depth-dependent hierarchical specialization that is the main finding of this paper. Sufficient width provides representational redundancy, allowing the network to safely discard noise while retaining signal.
+3. **Deep-mid (320d)**: LIF succeeds at its most *efficient* operating point (-0.26%, 3/3 wins). At the minimum sufficient redundancy, every dimension filtered by LIF is genuinely noise — the signal-to-noise ratio of the filtering operation is maximized. This "sweet spot" produces the strongest effect among the depth-matched comparisons.
 
-**Width threshold hypothesis.** We hypothesize that spike-based filtering requires a minimum representational redundancy to operate safely — analogous to MoE models requiring sufficient per-expert capacity. The critical width lies between 256d and 384d for 6-layer models. Finer-grained sweeps remain future work.
+4. **Deep-wide (384d)**: LIF still helps (-0.12%, 2/3 wins) but the effect *decreases* from 320d. With additional redundancy, the filtering targets become more diffuse — LIF has more to choose from, but the marginal value of each filtered dimension decreases.
+
+5. **Deep-very-wide (768d)**: LIF reaches its maximum effect (-0.75%, 3/3 wins), but likely through a *different mechanism* — the extreme redundancy enables LIF to organize hierarchical head specialization (Section 3.1-3.3), where individual heads develop distinct computational roles. This is qualitatively different from the noise-selective filtering at 320d.
+
+**Width threshold hypothesis.** We hypothesize that spike-based filtering requires a minimum representational redundancy to operate safely — analogous to MoE models requiring sufficient per-expert capacity. Our 5-point width sweep localizes the critical threshold between 256d and 320d for 6-layer models: LIF hurts at 256d (+0.35%) but helps at 320d (-0.26%), with the transition occurring sharply within a 64-dimensional window.
+
+**Two-stage mechanism hypothesis.** The non-monotonic pattern across 320d (-0.26%), 384d (-0.12%), and 768d (-0.75%) suggests LIF operates in two distinct functional modes: (a) *noise-selective filtering* near the critical threshold (~320d), where LIF achieves maximum signal-to-noise ratio in its gating decisions; and (b) *hierarchical self-organization* at large widths (~768d), where abundant redundancy allows LIF to reorganize entire attention heads into specialized computational roles. The dip at 384d may represent a transition zone between these regimes — too wide for efficient filtering, not yet wide enough for full hierarchical reorganization.
 
 **Variance reduction as evidence of regime change.** The cross-scale variance data (Section 3.7, Table) provides a clear diagnostic: where LIF helps, it *reduces* seed variance (up to 86% at full scale); where LIF hurts, it *increases* variance (+68% at medium). This suggests that LIF transitions from a destabilizing perturbation (insufficient width) to a stabilizing regularizer (sufficient width) — not gradually, but as a phase transition.
 
@@ -415,7 +424,7 @@ The cross-scale results (Section 3.7) reveal a non-trivial interaction between L
 - **Single task**: Character-level Shakespeare is controlled but narrow.
 - **Entropy analysis**: Current measurements use checkpoint-based methods rather than controlled probing.
 - **4E interpretation**: Our mapping to 4E cognition is interpretive, not mechanistic. We argue for *compatibility* with the framework, not proof of enactive cognition in neural networks.
-- **Width threshold granularity**: We identify the critical width between 256d and 384d for 6-layer models. Finer-grained sweeps and theoretical analysis of the minimum redundancy for safe filtering remain future work.
+- **Width threshold granularity**: Our 5-point sweep (128d, 192d, 256d, 320d, 384d) localizes the crossover between 256d and 320d. Even finer sweeps (e.g., 288d) could pinpoint the exact threshold, and theoretical analysis connecting minimum redundancy to LIF filter width remains open.
 - **CfC scale coverage**: CfC experiments cover two scales (xs, wide). Intermediate scales and larger CfC models remain untested, though the consistency of the null result across both tested scales supports the architectural interpretation.
 - **Neuroanatomical analogy**: The thalamus-cortex/cerebellum mapping is suggestive, not mechanistic. We claim functional correspondence, not structural equivalence.
 

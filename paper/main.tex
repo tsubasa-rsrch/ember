@@ -254,6 +254,27 @@ Full (768d) & 0.0104 & 0.0015 & \textbf{86\%} \\
 
 Where LIF hurts (Medium, 256d), variance \emph{increases} ($+68\%$). Where LIF helps, variance consistently decreases. LIF gating serves a dual role---improving mean performance and stabilizing training---but only above a critical width threshold between 256d and 320d.
 
+\subsection{Statistical Validation}
+\label{sec:stats}
+
+Given the small effect sizes ($< 1\%$ in loss), we conducted an extended 8-seed ablation at XS scale to test whether LIF improvement is statistically reliable.
+
+\begin{table}[h]
+\centering
+\caption{Extended XS ablation (8 seeds). LIF wins 7/8 seeds.}
+\label{tab:xs-stats}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Test} & \textbf{Statistic} & \textbf{$p$-value} \\
+\midrule
+Paired $t$-test & $t = 2.87$ & $0.024^*$ \\
+Wilcoxon signed-rank & $W = 3.0$ & $0.039^*$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Standard: $1.6167 \pm 0.0062$; LIF: $1.6156 \pm 0.0063$ ($\Delta = -0.068\%$, Cohen's $d = -1.02$). The effect is small in absolute terms but highly consistent: LIF improves 7 of 8 seeds, with the sole exception showing near-zero difference ($+0.0008$). Both parametric and non-parametric tests confirm significance at $\alpha = 0.05$. Larger scales remain at $n = 3$ and require additional seeds for statistical confirmation.
+
 \subsection{Cross-Architecture Analysis: Transformer vs CfC}
 \label{sec:cross-arch}
 
@@ -440,7 +461,7 @@ Further experiments with more seeds, deeper models, and wider heads are needed t
 
 \subsection{Limitations}
 \begin{itemize}
-    \item \textbf{Statistical power}: All ablations use 3 random seeds. Paired $t$-tests yield no significant differences at $p < 0.05$ for any individual scale (best: XS, $p = 0.057$). Effect sizes are small ($< 1\%$ in loss), and the current seed count cannot distinguish genuine effects from noise. Additional seeds and formal power analysis are needed.
+    \item \textbf{Statistical power}: Most ablations use 3 random seeds, which is insufficient for significance testing. An extended 8-seed ablation at XS scale confirmed significance (paired $t$-test $p = 0.024$, Wilcoxon $p = 0.039$, Cohen's $d = -1.02$, LIF wins 7/8 seeds). However, larger scales remain at $n = 3$ where effects are not statistically distinguishable from noise. Power analysis indicates mid-scale requires $\sim$18 seeds for 80\% power.
     \item \textbf{Single task}: Character-level Shakespeare is controlled but narrow. Generalization to other domains (vision, speech, multi-task) is untested.
     \item \textbf{No non-biological control}: We compare LIF gating to no gating, but do not compare against non-biological alternatives (e.g., learned sigmoid gates with matched parameter count). This limits causal claims about biological grounding.
     \item \textbf{Entropy analysis}: Current measurements use checkpoint-based methods rather than controlled probing.
