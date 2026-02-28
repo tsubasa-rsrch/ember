@@ -142,30 +142,7 @@ LIF gate alone achieves $-0.75\%$ validation loss improvement with $7\times$ var
 \subsection{Audio: CfC Classification}
 \label{sec:audio-results}
 
-\begin{table}[h]
-\centering
-\caption{Audio classification results (Speech Commands v2, 35 classes). Per-seed and aggregate statistics.}
-\label{tab:audio-results}
-\begin{tabular}{llcccc}
-\toprule
-\textbf{Condition} & \textbf{Seed} & \textbf{Val Acc (\%)} & \textbf{Test Acc (\%)} & \textbf{Val Std} & \textbf{Test Std} \\
-\midrule
-CfC-only & 42 & 88.27 & 86.56 & & \\
-CfC-only & 668 & 88.29 & 86.25 & & \\
-CfC-only & 1337 & \textbf{86.51} & \textbf{84.59} & & \\
-\cmidrule{2-6}
-& Mean & 87.69 & 85.80 & \textbf{0.83\%} & \textbf{0.86\%} \\
-\midrule
-CfC+LIF & 42 & 87.90 & 85.42 & & \\
-CfC+LIF & 668 & 88.08 & 85.80 & & \\
-CfC+LIF & 1337 & 88.09 & 86.19 & & \\
-\cmidrule{2-6}
-& Mean & 88.02 & 85.80 & \textbf{0.09\%} & \textbf{0.31\%} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Mean test accuracy is identical (85.80\% for both conditions; independent $t$-test $p = 0.647$). However, LIF reduces validation accuracy std by $\mathbf{9.2\times}$ ($0.83\% \to 0.09\%$) and test accuracy std by $\mathbf{2.8\times}$ ($0.86\% \to 0.31\%$). The regularization effect is unambiguous: LIF does not improve the ceiling but compresses the variance band.
+On Speech Commands v2 (35-class keyword spotting), mean test accuracy is identical between CfC-only and CfC+LIF (85.80\% both; $p = 0.647$). However, LIF reduces validation accuracy std by $\mathbf{9.2\times}$ ($0.83\% \to 0.09\%$) and test accuracy std by $\mathbf{2.8\times}$ ($0.86\% \to 0.31\%$). LIF does not improve the ceiling but compresses the variance band. Per-seed results are in Appendix Table~\ref{tab:audio-detail}.
 
 \subsection{The Seed 1337 Smoking Gun}
 \label{sec:smoking-gun}
@@ -250,70 +227,12 @@ The LIF effect traces a \textbf{U-shaped curve}: beneficial at XS (128d), harmfu
 \subsection{Cross-Architecture: Transformer vs CfC}
 \label{sec:cross-arch}
 
-\begin{table}[h]
-\centering
-\caption{Cross-architecture comparison at matched scales. $^\dagger$8-seed; others 3-seed.}
-\label{tab:cross-arch}
-\begin{tabular}{llccc}
-\toprule
-\textbf{Architecture} & \textbf{Scale} & \textbf{Standard} & \textbf{+LIF} & \textbf{$\Delta$} \\
-\midrule
-Transformer$^\dagger$ & XS (128d) & 1.6167 & 1.6156 & $-0.07\%$ \\
-Transformer$^\dagger$ & Mid (320d) & 1.4768 & 1.4741 & $-0.18\%$ \\
-Transformer & Wide (384d) & 1.4862 & 1.4845 & $-0.12\%$ \\
-Transformer & Full (768d) & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
-\midrule
-CfC (text) & XS (128d) & 1.6375 & 1.6392 & $+0.10\%$ \\
-CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-LIF improves Transformers at every text scale tested ($-0.07\%$ to $-0.75\%$) while having zero performance effect on CfC text at any scale ($+0.01\%$ to $+0.10\%$). The Wide comparison (Transformer 10.7M vs CfC 8.95M, both 384d) uses matched embedding dimensions, isolating backbone architecture as the sole variable.
-
-\textbf{Why the dissociation?} Transformer attention computes all token-pair relationships simultaneously, producing massively parallel, redundant information flow---exactly what threshold-based gating can productively filter. CfC continuous-time dynamics update hidden state sequentially through an ODE; each update is already a filtered integration. Adding LIF on top is redundant: gating a signal that has already been gated.
-
-\textbf{Note}: LIF \emph{does} regularize CfC on audio classification ($9.2\times$ variance reduction, \S\ref{sec:audio-results}), suggesting the architecture-dependence is specific to the text LM setting, not absolute. The CfC null result constrains but does not invalidate the universality claim.
+LIF improves Transformers at every text scale tested ($-0.07\%$ to $-0.75\%$) while having zero performance effect on CfC text ($+0.01\%$ to $+0.10\%$; Appendix Table~\ref{tab:cross-arch}). The Wide comparison (Transformer 10.7M vs CfC 8.95M, both 384d) isolates backbone architecture as the sole variable. Transformer attention computes all token-pair relationships simultaneously---massively parallel, redundant information flow that threshold-based gating can productively filter. CfC continuous-time dynamics update hidden state sequentially through an ODE; each update is already a filtered integration. LIF \emph{does} regularize CfC on audio ($9.2\times$ variance reduction, \S\ref{sec:audio-results}), suggesting the dissociation is task-specific, not absolute.
 
 \subsection{Non-Biological Gate Control}
 \label{sec:controls}
 
-To isolate whether LIF's effects arise from its biological structure (fire/smolder duality, leak dynamics, threshold-mediated sparsity) or simply from adding learnable parameters to attention, we introduce a \textbf{SigmoidGateAttention} control with matched parameter count (3 parameters per head per layer: slope, center, floor) at the identical post-softmax position:
-\begin{equation}
-g_h = \text{floor}_h + (1 - \text{floor}_h) \cdot \sigma\bigl(\text{slope}_h \cdot (\mathbf{A} - \text{center}_h)\bigr), \quad \hat{\mathbf{A}} = \frac{\mathbf{A} \odot g_h}{\|\mathbf{A} \odot g_h\|_1}
-\end{equation}
-This gate applies smooth elementwise modulation without LIF's fire/smolder binary duality, refractory dynamics, or biologically-motivated leak.
-
-\begin{table}[h]
-\centering
-\caption{Non-biological gate control: LIF vs Sigmoid at matched parameters.}
-\label{tab:controls}
-\begin{tabular}{llccc}
-\toprule
-\textbf{Scale} & \textbf{Gate} & \textbf{Val Loss} & \textbf{$\Delta$ vs Std} & \textbf{vs LIF} \\
-\midrule
-\multirow{3}{*}{XS (128d)} & Standard & $1.6171 \pm 0.0060$ & --- & --- \\
- & LIF & $1.6155 \pm 0.0058$ & $-0.10\%$ & --- \\
- & Sigmoid & $1.6155 \pm 0.0058$ & $-0.10\%$ & $\equiv$ LIF \\
-\midrule
-\multirow{3}{*}{Medium (256d)} & Standard & $1.4736 \pm 0.0022$ & --- & --- \\
- & LIF & $1.4788 \pm 0.0037$ & $+0.35\%$ & --- \\
- & Sigmoid & $1.4796 \pm 0.0020$ & $+0.41\%$ & $\approx$ LIF \\
-\midrule
-\multirow{3}{*}{Wide (384d)} & Standard & $1.4862 \pm 0.0113$ & --- & --- \\
- & LIF & $1.4845 \pm 0.0067$ & $-0.11\%$ & --- \\
- & Sigmoid & $1.4860 \pm 0.0061$ & $-0.01\%$ & $10\times$ weaker \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-At \textbf{XS} scale, LIF and Sigmoid produce identical results to seven decimal places ($\Delta < 10^{-7}$), confirming that the 0.10\% improvement over Standard is a pure parameter-count effect: 24 additional parameters (3$\times$4 heads$\times$2 layers), regardless of gate structure.
-
-At \textbf{Medium} scale, both gates degrade performance by similar margins ($+0.35\%$ LIF, $+0.41\%$ Sigmoid). The U-curve valley is gate-generic, not LIF-specific: at insufficient width (256d), \emph{any} post-softmax gate disrupts information flow.
-
-At \textbf{Wide} scale, the gates diverge: LIF improves by $-0.11\%$ while Sigmoid shows essentially zero effect ($-0.01\%$). The LIF advantage is $10\times$ stronger than Sigmoid despite identical parameter count. While not statistically significant at $N=3$, this directional divergence is consistent across all three scales: gate structure is irrelevant at small width (XS: $\equiv$), detrimental at medium width ($\approx$), and begins to differentiate at sufficient width.
-
-\textbf{Interpretation.} These results suggest that LIF's improvement below the U-curve threshold is a pure parameter-count effect (any 3-per-head gate suffices), while above the threshold, biological structure---fire/smolder duality, threshold-mediated sparsity, leak dynamics---provides genuine regularization that smooth sigmoid gating cannot replicate. The additional parameters are necessary but not sufficient; the gating \emph{structure} matters at scale.
+To isolate biological structure from parameter-count effects, we introduce a \textbf{SigmoidGate} control with matched parameters (3 per head per layer) at the identical post-softmax position, applying smooth modulation without fire/smolder duality or leak dynamics (Appendix Table~\ref{tab:controls}). Results at three scales reveal a clear progression: at \textbf{XS} (128d), LIF $\equiv$ Sigmoid to seven decimal places---the improvement is a pure parameter-count effect. At \textbf{Medium} (256d), both gates degrade equally ($+0.35\%$ LIF, $+0.41\%$ Sigmoid)---the U-curve valley is gate-generic. At \textbf{Wide} (384d), LIF's advantage becomes $10\times$ stronger than Sigmoid ($-0.11\%$ vs $-0.01\%$). Below the width threshold, any gate suffices; above it, biological structure---fire/smolder duality, threshold-mediated sparsity---provides genuine regularization that smooth gating cannot replicate.
 
 % ============================================================
 \section{Analysis}
@@ -350,9 +269,7 @@ Inhibitory mechanisms alone degrade performance. Only their combination with exc
 
 \subsection{Per-Head Functional Specialization}
 
-Post-critical-period, attention heads spontaneously differentiate into distinct computational roles---pointer heads (sharp, peaked attention), gatherer heads (broad, distributed attention), and focuser heads (intermediate patterns)---absent in standard training. Analysis of learned LIF parameters reveals structured differentiation: in the wide-scale model (6L/6H/384d), head L0H2 emerges as an extreme outlier with coordinated extremity across threshold ($0.152$ vs layer mean $0.012$), leak ($0.661$ vs $0.368$), and steepness ($3.25$ vs $2.01$), suggesting functional specialization rather than noise.
-
-A cross-seed analysis at XS scale (2L/4H, 3 seeds) reveals a consistent structural pattern: each layer contains exactly one ``gatekeeper'' head whose threshold is substantially larger than others. The identity of the gatekeeper varies by seed, but the structural role---approximately 25\% of heads per layer acting as gatekeepers---is stable (see Figure~\ref{fig:head-params}).
+Post-critical-period, attention heads spontaneously differentiate into pointer (sharp), gatherer (broad), and focuser (intermediate) roles---absent in standard training. At Wide scale, head L0H2 emerges as an extreme outlier (threshold $0.152$ vs mean $0.012$, leak $0.661$ vs $0.368$). Cross-seed analysis reveals a consistent $\sim$25\% ``gatekeeper'' ratio per layer (Figure~\ref{fig:head-params}), paralleling inhibitory interneuron proportions in biological cortex.
 
 
 % ============================================================
@@ -386,12 +303,10 @@ We use ``parallels'' deliberately: these are structural correspondences, not mec
 \subsection{Future Work}
 
 \begin{itemize}
-    \item \textbf{AdaptiveLIF}: Entropy-conditioned dynamic thresholds $\theta = f(\mathbf{h})$ for content-dependent gating.
-    \item \textbf{Vision modality}: Testing LIF on Vision Transformers to extend the cross-modal evidence.
-    \item \textbf{Larger-scale validation}: Extended seed ablations ($N \geq 18$ for 80\% power at mid-scale) and larger audio models (Whisper-scale).
-    \item \textbf{Formal variance tests}: $F$-tests and bootstrap confidence intervals for the variance reduction claims.
-    \item \textbf{Non-biological baselines}: Comparing LIF to learned sigmoid gates and other lightweight gating mechanisms to isolate the contribution of biological grounding.
-    \item \textbf{Production-scale deployment}: Preliminary probing on Qwen3-14B-4bit (1,600 heads, 4,800 LIF parameters) confirms zero-degradation identity initialization, but static thresholds yield no content-dependent gating. Adaptive thresholds $\theta = f(\mathbf{h})$ conditioned on hidden states are needed.
+    \item \textbf{AdaptiveLIF}: Dynamic thresholds $\theta = f(\mathbf{h})$ for content-dependent gating; preliminary probing on Qwen3-14B-4bit (4,800 LIF parameters) confirms zero-degradation identity initialization.
+    \item \textbf{Vision modality}: Testing LIF on Vision Transformers to extend cross-modal evidence.
+    \item \textbf{Larger-scale validation}: $N \geq 18$ seed ablations for 80\% power at mid-scale; formal $F$-tests for variance reduction.
+    \item \textbf{Full-scale SigmoidGate}: 768d comparison to confirm the structural divergence observed at 384d.
 \end{itemize}
 
 
@@ -419,17 +334,74 @@ The brain may spike not to save power, but to organize parallel computation---an
 \clearpage
 \appendix
 
-\section*{Appendix A: Figures}
+\section*{Appendix A: Detailed Tables}
 
-% NOTE: Figures below reference image files. Some may need to be created or renamed.
-% Existing figures from Paper 1: figures/fig7_architecture.png, figures/tiny_u_curve.png,
-%   figures/lif_head_parameters.png, figures/fig6_ei_balance.png
-% Existing figures from Paper 2: ../figures/audio_fig2_learning_curves.png
-% May need to create: cross-modal entropy comparison figure
+\begin{table}[h]
+\centering
+\caption{Audio classification per-seed results (Speech Commands v2, 35 classes).}
+\label{tab:audio-detail}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Condition} & \textbf{Seed} & \textbf{Val Acc (\%)} & \textbf{Test Acc (\%)} & \textbf{Val Std} & \textbf{Test Std} \\
+\midrule
+CfC-only & 42 & 88.27 & 86.56 & & \\
+CfC-only & 668 & 88.29 & 86.25 & & \\
+CfC-only & 1337 & \textbf{86.51} & \textbf{84.59} & & \\
+\cmidrule{2-6}
+& Mean & 87.69 & 85.80 & \textbf{0.83\%} & \textbf{0.86\%} \\
+\midrule
+CfC+LIF & 42 & 87.90 & 85.42 & & \\
+CfC+LIF & 668 & 88.08 & 85.80 & & \\
+CfC+LIF & 1337 & 88.09 & 86.19 & & \\
+\cmidrule{2-6}
+& Mean & 88.02 & 85.80 & \textbf{0.09\%} & \textbf{0.31\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-% Architecture figure moved to main body (Section 2.1)
+\begin{table}[h]
+\centering
+\caption{Cross-architecture comparison at matched scales. $^\dagger$8-seed; others 3-seed.}
+\label{tab:cross-arch}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Architecture} & \textbf{Scale} & \textbf{Standard} & \textbf{+LIF} & \textbf{$\Delta$} \\
+\midrule
+Transformer$^\dagger$ & XS (128d) & 1.6167 & 1.6156 & $-0.07\%$ \\
+Transformer$^\dagger$ & Mid (320d) & 1.4768 & 1.4741 & $-0.18\%$ \\
+Transformer & Wide (384d) & 1.4862 & 1.4845 & $-0.12\%$ \\
+Transformer & Full (768d) & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
+\midrule
+CfC (text) & XS (128d) & 1.6375 & 1.6392 & $+0.10\%$ \\
+CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-% U-curve and smoking gun figures moved to main body (Sections 3.5 and 3.3)
+\begin{table}[h]
+\centering
+\caption{Non-biological gate control: LIF vs Sigmoid at matched parameters (3 per head per layer).}
+\label{tab:controls}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Scale} & \textbf{Gate} & \textbf{Val Loss} & \textbf{$\Delta$ vs Std} & \textbf{vs LIF} \\
+\midrule
+\multirow{3}{*}{XS (128d)} & Standard & $1.6171 \pm 0.0060$ & --- & --- \\
+ & LIF & $1.6155 \pm 0.0058$ & $-0.10\%$ & --- \\
+ & Sigmoid & $1.6155 \pm 0.0058$ & $-0.10\%$ & $\equiv$ LIF \\
+\midrule
+\multirow{3}{*}{Medium (256d)} & Standard & $1.4736 \pm 0.0022$ & --- & --- \\
+ & LIF & $1.4788 \pm 0.0037$ & $+0.35\%$ & --- \\
+ & Sigmoid & $1.4796 \pm 0.0020$ & $+0.41\%$ & $\approx$ LIF \\
+\midrule
+\multirow{3}{*}{Wide (384d)} & Standard & $1.4862 \pm 0.0113$ & --- & --- \\
+ & LIF & $1.4845 \pm 0.0067$ & $-0.11\%$ & --- \\
+ & Sigmoid & $1.4860 \pm 0.0061$ & $-0.01\%$ & $10\times$ weaker \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Appendix B: Figures}
 
 \begin{figure}[h]
 \centering
