@@ -316,6 +316,8 @@ We use ``parallels'' deliberately: these are structural correspondences, not mec
 \textbf{Spiking Transformers.} Spikformer \cite{zhou2023spikformer} replaces attention with spike-based computation; we augment standard attention with a lightweight gate, preserving full computation.
 \textbf{Gated Attention.} Qwen \citep{yang2025qwen3} uses query-dependent sigmoid gates ($884$K params); our LIF achieves comparable organization with $8{,}000\times$ fewer parameters.
 \textbf{CfC Networks.} \cite{hasani2022closed} use ODE dynamics; our text CfC null result reveals task-modulated architecture-dependence.
+\textbf{Flat Minima and Generalization.} \cite{hochreiter1997flat} showed flat minima correlate with better generalization; \cite{keskar2017large} linked sharp minima to large-batch training degradation. LIF may achieve flatness through threshold-induced smoothing rather than optimizer-level interventions.
+\textbf{Neural Variability Quenching.} \cite{churchland2010stimulus} demonstrated that stimulus onset reduces trial-to-trial variability across cortical areas. LIF's cross-seed variance reduction is a functional analog: threshold gating quenches initialization-dependent variability.
 \textbf{E/I Balance.} \cite{mackwood2021ei,rubin2017balanced} show E/I balance is required for noise-robust selectivity; our v3.5 results show it emerging spontaneously.
 \textbf{4E Cognition.} The Embodied-Embedded-Enacted-Extended framework \cite{gallagher2023embodied,varela1991embodied,clark1998extended,dipaolo2014enactive} provides a theoretical lens: LIF changes the substrate (Embodied), creating mutual head dependency (Embedded), from which organization is enacted through training (Enacted), functioning as attention scaffolding (Extended).
 

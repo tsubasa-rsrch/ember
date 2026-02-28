@@ -73,6 +73,9 @@ SCALES = {
         'n_layer': 6, 'n_head': 8, 'n_embd': 384, 'dropout': 0.2,
         'cfc_layers': 4, 'cfc_units': 512, 'cfc_embd': 384,  # units > embd+2 for AutoNCP
     },
+    'full': {  # ~43M params, full-scale model matching original train.py
+        'n_layer': 6, 'n_head': 12, 'n_embd': 768, 'dropout': 0.2,
+    },
 }
 
 
