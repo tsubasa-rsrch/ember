@@ -207,6 +207,81 @@ class LeakyIntegrateFireAttention(nn.Module):
         return y, new_refractory, new_head_state
 
 
+class SigmoidGateAttention(nn.Module):
+    """
+    Non-biological control: learned sigmoid gate with matched parameter count.
+
+    Same position (post-softmax attention weights), same parameter count (3×n_head),
+    but NO biological structure — no leak/fire duality, no smoldering mechanism.
+    Pure learnable elementwise sigmoid gating.
+
+    This isolates the contribution of LIF's biological grounding:
+    - If SigmoidGate ≈ LIF: structure irrelevant, both achieve same efficiency
+    - If SigmoidGate << LIF: biological structure is the advantage
+    """
+
+    def __init__(self, config):
+        super().__init__()
+        assert config.n_embd % config.n_head == 0
+        self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd, bias=config.bias)
+        self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
+        self.attn_dropout = nn.Dropout(config.dropout)
+        self.resid_dropout = nn.Dropout(config.dropout)
+        self.n_head = config.n_head
+        self.n_embd = config.n_embd
+        self.dropout = config.dropout
+
+        # Per-head learnable parameters: matched to LIF's 3×n_head
+        # slope: controls sigmoid sharpness (maps to LIF's steepness)
+        self.slope = nn.Parameter(torch.full((config.n_head,), 2.0))
+        # center: controls sigmoid position (maps to LIF's threshold)
+        self.center = nn.Parameter(torch.full((config.n_head,), 0.01))
+        # floor: minimum gate value (maps to LIF's leak)
+        self.floor = nn.Parameter(torch.full((config.n_head,), 2.0))
+
+        # causal mask (cached)
+        self.register_buffer("causal_mask",
+            torch.tril(torch.ones(config.block_size, config.block_size))
+                 .view(1, 1, config.block_size, config.block_size))
+
+    def forward(self, x, use_lif=True, refractory_state=None, head_state=None):
+        """Same interface as LIF attention for drop-in replacement."""
+        B, T, C = x.size()
+
+        q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
+        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+
+        # Compute attention scores
+        att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
+        att = att.masked_fill(self.causal_mask[:, :, :T, :T] == 0, float('-inf'))
+        att_probs = F.softmax(att, dim=-1)
+
+        # Non-biological sigmoid gate: pure elementwise modulation
+        # Same transforms as LIF for fair comparison of initialization
+        slope = F.softplus(self.slope).view(1, -1, 1, 1)
+        center = torch.abs(self.center).view(1, -1, 1, 1) * 0.1
+        floor = torch.sigmoid(self.floor).view(1, -1, 1, 1)
+
+        # Single sigmoid gate: floor + (1-floor) * σ(slope * (x - center))
+        # No fire/smolder duality, no leak mechanism
+        gate = floor + (1.0 - floor) * torch.sigmoid(slope * (att_probs - center))
+        modulated = att_probs * gate
+
+        # Re-normalize
+        modulated = modulated / (modulated.sum(dim=-1, keepdim=True) + 1e-8)
+
+        modulated = self.attn_dropout(modulated)
+        y = modulated @ v
+
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        y = self.resid_dropout(self.c_proj(y))
+
+        # Return same interface as LIF: (output, refractory_state, head_state)
+        return y, None, head_state
+
+
 class StandardAttention(nn.Module):
     """Standard causal self-attention (from nanoGPT, for comparison)."""
 
@@ -348,6 +423,8 @@ class EmberBlock(nn.Module):
         self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
         if config.use_qwen_gate:
             self.attn = QwenGatedAttention(config)
+        elif config.use_sigmoid_gate:
+            self.attn = SigmoidGateAttention(config)
         elif config.use_lif:
             self.attn = LeakyIntegrateFireAttention(config)
         else:
@@ -355,6 +432,7 @@ class EmberBlock(nn.Module):
         self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
         self.use_lif = config.use_lif
+        self.use_sigmoid_gate = config.use_sigmoid_gate
         self.use_qwen_gate = config.use_qwen_gate
         self.use_temporal_lif = config.use_temporal_lif
 
@@ -371,6 +449,11 @@ class EmberBlock(nn.Module):
         if self.use_lif:
             attn_out, new_refractory, new_head_state = self.attn(
                 self.ln_1(x), use_lif=True, refractory_state=refractory_state,
+                head_state=head_state)
+            x = x + attn_out
+        elif self.use_sigmoid_gate:
+            attn_out, new_refractory, new_head_state = self.attn(
+                self.ln_1(x), refractory_state=refractory_state,
                 head_state=head_state)
             x = x + attn_out
         elif self.use_qwen_gate:
@@ -429,6 +512,7 @@ class EmberConfig:
     # lif_mode: 'learnable' (v2), 'fixed' (ablation), 'refractory' (v2.5)
     lif_mode: str = 'learnable'
     use_qwen_gate: bool = False  # Qwen-style gated attention (NeurIPS 2025 baseline)
+    use_sigmoid_gate: bool = False  # Non-biological control: matched-param sigmoid gate
 
     # v3: Temporal LIF — adaptive computation per token
     use_temporal_lif: bool = False  # membrane potential accumulates across layers
@@ -469,7 +553,8 @@ class Ember(nn.Module):
                 torch.nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * config.n_layer))
 
         n_params = self.get_num_params()
-        print(f"Ember: {n_params/1e6:.2f}M parameters (LIF={'ON' if config.use_lif else 'OFF'})")
+        gate_type = 'LIF' if config.use_lif else ('Sigmoid' if config.use_sigmoid_gate else ('Qwen' if config.use_qwen_gate else 'OFF'))
+        print(f"Ember: {n_params/1e6:.2f}M parameters (gate={gate_type})")
 
     def get_num_params(self, non_embedding=True):
         n_params = sum(p.numel() for p in self.parameters())

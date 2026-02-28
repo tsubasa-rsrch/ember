@@ -141,6 +141,22 @@ def train_one(model_type, seed, device, train_data, val_data, meta, scale='xs'):
         model = LiquidEmber(config).to(device)
         lr = LEARNING_RATE_CFC
         mode_str = "CfC+LIF" if use_lif_cfc else "CfC-only"
+    elif model_type == 'sigmoid':
+        config = EmberConfig(
+            block_size=BLOCK_SIZE,
+            vocab_size=vocab_size,
+            n_layer=s['n_layer'],
+            n_head=s['n_head'],
+            n_embd=s['n_embd'],
+            dropout=s['dropout'],
+            bias=False,
+            use_lif=False,
+            use_sigmoid_gate=True,
+            lif_mode='learnable',
+        )
+        model = Ember(config).to(device)
+        lr = LEARNING_RATE
+        mode_str = "Sigmoid"
     else:
         use_lif = (model_type == 'lif')
         config = EmberConfig(
@@ -238,7 +254,7 @@ def print_results(all_results):
     print("-" * len(header))
 
     standard_mean = None
-    for mt in ['standard', 'lif', 'cfc_base', 'cfc']:
+    for mt in ['standard', 'lif', 'sigmoid', 'cfc_base', 'cfc']:
         if mt not in by_type:
             continue
         results = by_type[mt]
@@ -285,7 +301,7 @@ def print_results(all_results):
 
 def main():
     parser = argparse.ArgumentParser(description="Ember-Tiny: scale-independent LIF effects")
-    parser.add_argument('--model', choices=['standard', 'lif', 'cfc', 'cfc_base', 'all'], default='all',
+    parser.add_argument('--model', choices=['standard', 'lif', 'sigmoid', 'cfc', 'cfc_base', 'all'], default='all',
                         help="Which model(s) to train")
     parser.add_argument('--ablation', action='store_true',
                         help="Run 3-seed ablation (42, 668, 1337)")
@@ -305,7 +321,7 @@ def main():
     train_data, val_data, meta = load_data()
 
     seeds = [42, 668, 1337] if args.ablation else [args.seed]
-    models = ['standard', 'lif', 'cfc'] if args.model == 'all' else [args.model]
+    models = ['standard', 'lif', 'sigmoid', 'cfc'] if args.model == 'all' else [args.model]
 
     print(f"Scale: {args.scale} | Models: {models} | Seeds: {seeds} | Iters: {MAX_ITERS}")
 
