@@ -461,6 +461,17 @@ A 3-seed experiment at XS scale (2L/4H) reveals the following pattern: in all th
 
 Further experiments with more seeds, deeper models, and wider heads are needed to determine whether the ``one gatekeeper per layer'' pattern generalizes beyond the current 2L/4H configuration (see Figures~\ref{fig:head-params} and~\ref{fig:threshold-seeds} in Appendix).
 
+\subsection{Scaling Probe: LIF on Qwen3-14B}
+\label{sec:qwen3}
+
+To test whether LIF gating effects generalize beyond Ember-Tiny, we applied LIF gates to all 40 attention layers of Qwen3-14B-4bit (40 heads/layer, 1,600 heads total, 4,800 LIF parameters). We probed whether per-head gating differentiates between normal and boundary-crossing prompts (6 prompts per condition, prefill-only forward pass to capture full-sequence attention).
+
+\textbf{Result}: All 1,600 heads remain neutral. Maximum gating difference between conditions is $2.6 \times 10^{-5}$---functionally zero. LIF with static parameters does not perform content-dependent gating, even when trained on personality-reconstruction data ($n = 14$ pairs, 50 iterations, loss $3.42 \to 3.26$).
+
+However, two secondary findings are notable: (1)~The base model's attention entropy is $+0.01$ higher for boundary prompts in mid-layers (L4--L20) and lower in final layers (L32--L36), suggesting Qwen3's RLHF alignment already encodes boundary sensitivity in attention. (2)~Pearson $r = -0.41$ between trained threshold and gating differential---high-threshold heads close slightly more on boundary inputs, though the effect size is negligible.
+
+These results confirm LIF's role as a \emph{static regularizer}: it shapes per-head organization during training but cannot dynamically gate based on input content. Content-dependent gating would require adaptive thresholds $\theta = f(\mathbf{h})$ conditioned on hidden states, a direction left to future work.
+
 \subsection{Limitations}
 \begin{itemize}
     \item \textbf{Statistical power}: Extended 8-seed ablations at XS confirmed significance ($p = 0.024$). Mid-scale (320d) at $n = 8$ shows directional consistency (LIF wins 5/8, $\Delta = -0.18\%$) but does not reach significance ($p = 0.235$, Cohen's $d = 0.46$). Power analysis indicates mid-scale requires $\sim$18 seeds for 80\% power given observed effect size.
@@ -471,6 +482,7 @@ Further experiments with more seeds, deeper models, and wider heads are needed t
     \item \textbf{Width threshold granularity}: Finer sweeps (e.g., 288d) could pinpoint the exact threshold.
     \item \textbf{CfC scale coverage}: Two scales tested; intermediate scales remain open.
     \item \textbf{Neuroanatomical analogy}: We claim functional correspondence, not structural equivalence.
+    \item \textbf{Qwen3 probe}: The production-model probe (\S\ref{sec:qwen3}) uses $n = 6$ prompts per condition and a single model; broader evaluation across models and prompt sets is needed.
 \end{itemize}
 
 
