@@ -370,6 +370,8 @@ The thalamus gates cortical (parallel) but not cerebellar (sequential, brainstem
 
 We use ``parallels'' deliberately: these are structural correspondences, not mechanistic equivalences.
 
+\textbf{An \emph{in silico} advantage.} Biological brains cannot independently vary width, density, and connectivity---enlarging a brain changes all three simultaneously. Ember provides a controlled experimental system: \texttt{n\_embd} (width) can be varied while holding depth and head count constant, and gate structure (LIF vs Sigmoid) can be swapped without changing width. The SigmoidGate control (\S\ref{sec:controls}) exploits this: at matched width, biological gate structure (fire/smolder duality) produces $10\times$ stronger effects than smooth gating. This suggests that the all-or-nothing character of biological neurons---which LIF preserves and Sigmoid discards---is functionally meaningful only above a width threshold that permits role specialization.
+
 \subsection{Limitations}
 
 \begin{itemize}
