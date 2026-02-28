@@ -54,7 +54,7 @@ Artificial and Biological Neural Systems}
 
 % ============================================================
 \begin{abstract}
-We introduce Leaky Integrate-and-Fire (LIF) gating, a minimal biologically-inspired mechanism (108 learnable parameters) that adds threshold-based selective filtering to standard neural network attention. Despite extreme simplicity, LIF gating induces rich organizational structure: progressive depth hierarchy, functional head specialization (pointer/gatherer/focuser roles), seed-invariant critical periods analogous to GABA-driven cortical development, and spontaneous excitatory-inhibitory balance. In controlled experiments across Transformer and Closed-form Continuous-time (CfC) architectures, LIF gating consistently improves Transformers ($-0.75\%$ validation loss, $7\times$ cross-seed variance reduction) while having zero effect on CfC networks ($+0.01\%$). This architecture-dependent pattern recapitulates brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing. Interpreted through the 4E cognition framework, these findings suggest that efficient information processing under threshold-based gating constraints converges on the same organizational solution regardless of substrate---a case of convergent functional architecture between artificial and biological neural systems.
+We introduce Leaky Integrate-and-Fire (LIF) gating, a minimal biologically-inspired mechanism (108 learnable parameters) that adds threshold-based selective filtering to standard neural network attention. Despite extreme simplicity, LIF gating induces rich organizational structure: progressive depth hierarchy, functional head specialization (pointer/gatherer/focuser roles), seed-invariant critical periods analogous to GABA-driven cortical development, and spontaneous excitatory-inhibitory balance. In controlled experiments across Transformer and Closed-form Continuous-time (CfC) architectures, LIF gating consistently improves Transformers ($-0.75\%$ validation loss, $7\times$ cross-seed variance reduction) while having zero effect on CfC networks ($+0.01\%$). This architecture-dependent pattern parallels brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing. Interpreted through the 4E cognition framework, these findings suggest that efficient information processing under threshold-based gating constraints converges on the same organizational solution regardless of substrate---a case of convergent functional architecture between artificial and biological neural systems.
 \end{abstract}
 
 % ============================================================
@@ -284,14 +284,14 @@ Combining Transformer and CfC results reveals a striking pattern: \textbf{LIF ef
 
 \begin{table}[h]
 \centering
-\caption{Cross-architecture comparison at matched scales.}
+\caption{Cross-architecture comparison at matched scales. $^\dagger$8-seed extended ablation; others are 3-seed.}
 \label{tab:cross-arch}
 \begin{tabular}{llcccc}
 \toprule
 \textbf{Architecture} & \textbf{Scale} & \textbf{Params} & \textbf{Standard} & \textbf{+LIF} & \textbf{$\Delta$} \\
 \midrule
-Transformer & XS (2L/4H/128d) & 0.42M & 1.6171 & 1.6155 & $-0.10\%$ \\
-Transformer & Mid (6L/8H/320d) & 7.5M & 1.4768 & 1.4741 & $-0.18\%$ \\
+Transformer$^\dagger$ & XS (2L/4H/128d) & 0.42M & 1.6167 & 1.6156 & $-0.07\%$ \\
+Transformer$^\dagger$ & Mid (6L/8H/320d) & 7.5M & 1.4768 & 1.4741 & $-0.18\%$ \\
 Transformer & Wide (6L/8H/384d) & 10.7M & 1.4862 & 1.4845 & $-0.12\%$ \\
 Transformer & Full (6L/12H/768d) & 42.7M & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
 \midrule
@@ -301,7 +301,7 @@ CfC & Wide (4L/512u/384d) & 8.95M & 1.4851 & 1.4852 & $+0.01\%$ \\
 \end{tabular}
 \end{table}
 
-The pattern is unambiguous: LIF improves Transformers at every scale tested ($-0.10\%$ to $-0.75\%$), while having zero effect on CfC at any scale ($+0.01\%$ to $+0.10\%$). The wide-scale comparison (Transformer 10.7M vs CfC 8.95M, both 384d) uses matched embedding dimensions and comparable parameter counts, isolating the backbone architecture as the sole variable.
+The pattern is unambiguous: LIF improves Transformers at every scale tested ($-0.07\%$ to $-0.75\%$), while having zero effect on CfC at any scale ($+0.01\%$ to $+0.10\%$). The wide-scale comparison (Transformer 10.7M vs CfC 8.95M, both 384d) uses matched embedding dimensions and comparable parameter counts, isolating the backbone architecture as the sole variable.
 
 \textbf{Why does LIF help Transformers but not CfC?} The key distinction is \emph{parallel vs sequential} information processing:
 \begin{itemize}
