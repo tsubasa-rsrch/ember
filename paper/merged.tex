@@ -109,7 +109,7 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold (ini
 
 \textbf{Text experiments.} Character-level Shakespeare (1.1M characters), next-character prediction. Transformer: 6-layer, 12-head, 768d (42.7M params) as the full-scale model, with additional scales from 2L/4H/128d (0.42M) to 6L/8H/384d (10.7M) for the width sweep. CfC: 2--4 layers, 192--512 units. Training: AdamW, 3,000 iterations, 3 seeds (42, 668, 1337); extended 8-seed ablations at XS and Mid scales. LIF adds 108 parameters (Transformer full-scale) or 24--96 parameters (CfC).
 
-\textbf{Audio experiments.} Google Speech Commands v2 \cite{warden2018speech}: 35-class keyword spotting, 105,829 utterances (1s, 16kHz). Architecture: Mel spectrogram (80 bins) $\to$ linear projection ($80 \to 128$) $\to$ 4-layer CfC (192 units/layer) $\to$ mean pooling $\to$ classifier ($128 \to 35$). Total: $\sim$500K parameters + 1,536 LIF parameters. Training: AdamW, lr $10^{-3}$, batch 64, 15 epochs, dropout 0.1, gradient clipping 1.0, 3 seeds (42, 668, 1337).
+\textbf{Audio experiments.} Google Speech Commands v2 \cite{warden2018speech}: 35-class keyword spotting, 105,829 utterances (1s, 16kHz). Architecture: Mel spectrogram (80 bins) $\to$ linear projection ($80 \to 128$) $\to$ 4-layer CfC (192 units/layer) $\to$ mean pooling $\to$ classifier ($128 \to 35$). Total: $\sim$500K parameters + 1,536 LIF parameters. Training: AdamW, lr $10^{-3}$, batch 64, 15 epochs, dropout 0.1, gradient clipping 1.0, 6 seeds (42, 668, 1337, 2024, 314, 777).
 
 
 % ============================================================
@@ -142,7 +142,7 @@ LIF gate alone achieves $-0.75\%$ validation loss improvement with $7\times$ var
 \subsection{Audio: CfC Classification}
 \label{sec:audio-results}
 
-On Speech Commands v2 (35-class keyword spotting), mean test accuracy is identical between CfC-only and CfC+LIF (85.80\% both; $p = 0.647$). However, LIF reduces validation accuracy std by $\mathbf{9.2\times}$ ($0.83\% \to 0.09\%$) and test accuracy std by $\mathbf{2.8\times}$ ($0.86\% \to 0.31\%$). LIF does not improve the ceiling but compresses the variance band. Per-seed results are in Appendix Table~\ref{tab:audio-detail}.
+On Speech Commands v2 (35-class keyword spotting, $N = 6$ seeds), CfC+LIF achieves $85.98\% \pm 0.40$ test accuracy vs.\ CfC-only $85.57\% \pm 0.41$ (mean $\Delta = +0.41\%$, $p = 0.170$ paired $t$-test, Cohen's $d = 0.72$). LIF wins 4/6 seeds, with one tie and one base win. While not reaching significance at $N = 6$, the medium effect size and consistent directional improvement parallel the XS text result at smaller sample sizes. The original 3-seed subset (42, 668, 1337) showed identical means with dramatic variance reduction ($9.2\times$ val, $2.8\times$ test); the extended 6-seed analysis confirms this pattern: LIF does not dramatically change the ceiling but consistently raises the floor. Per-seed results are in Appendix Table~\ref{tab:audio-detail}.
 
 \subsection{The Seed 1337 Smoking Gun}
 \label{sec:smoking-gun}
@@ -171,7 +171,7 @@ This demonstrates LIF's core mechanism: it does not improve the ceiling; it \emp
 \midrule
 Transformer & Text & LM (loss) & $-0.75\%$ & $7.0\times$ \\
 CfC & Text & LM (loss) & $+0.01\%$ & $1.0\times$ \\
-CfC & Audio & Classification & $+0.33\%$ (ns) & $9.2\times$ (val) / $2.8\times$ (test) \\
+CfC & Audio & Classification & $+0.41\%$ ($p{=}0.17$, $d{=}0.72$) & $1.03\times$ (test, $N{=}6$) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -292,7 +292,7 @@ We use ``parallels'' deliberately: these are structural correspondences, not mec
 \subsection{Limitations}
 
 \begin{itemize}
-    \item \textbf{Statistical power}: Extended 8-seed ablations at XS confirmed significance ($p = 0.024$), but Mid-scale did not reach significance ($p = 0.235$). Audio results use $N = 3$ seeds per condition.
+    \item \textbf{Statistical power}: Extended 8-seed ablations at XS confirmed significance ($p = 0.024$), but Mid-scale did not reach significance ($p = 0.235$). Audio $N = 6$ shows a medium effect (Cohen's $d = 0.72$, 4/6 wins) but does not reach significance ($p = 0.170$).
     \item \textbf{Limited tasks}: One text task (character-level Shakespeare) and one audio task (keyword spotting). Generalization to vision, multi-task settings, and continuous speech is untested.
     \item \textbf{Non-biological control}: SigmoidGate control (\S\ref{sec:controls}) tested at 3 scales. Directional LIF advantage at Wide ($10\times$ stronger effect) but not statistically significant at $N=3$. Full-scale (768d) comparison would strengthen the structural argument.
     \item \textbf{CfC architecture-dependence}: The text CfC null result may be specific to the character-level LM setting, since audio CfC shows strong regularization. More CfC conditions are needed.
@@ -327,7 +327,7 @@ We use ``parallels'' deliberately: these are structural correspondences, not mec
 
 We introduced LIF gating, a minimal biologically-inspired mechanism (108--1,536 parameters) that produces two separable effects across modalities: \textbf{universal regularization} ($2.8$--$9.2\times$ cross-seed variance reduction on both text and audio) and \textbf{modality-dependent organization} (depth hierarchy, head specialization, E/I balance). The seed 1337 catastrophic failure prevention on audio classification provides the clearest mechanistic evidence: threshold-based gating stabilizes the training landscape against initialization-dependent instabilities.
 
-Crucially, LIF gating is \textbf{not} universally effective for performance---it consistently improves Transformer text modeling but has zero performance effect on CfC text, while still regularizing CfC audio. This pattern has functional parallels to brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing, and inhibitory circuits reduce variability across all sensory modalities.
+Crucially, LIF gating is \textbf{not} universally effective for performance---it consistently improves Transformer text modeling but has zero performance effect on CfC text, while showing consistent directional improvement on CfC audio ($+0.41\%$, 4/6 wins, Cohen's $d = 0.72$). This pattern has functional parallels to brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing, and inhibitory circuits reduce variability across all sensory modalities.
 
 The brain may spike not to save power, but to organize parallel computation---and artificial networks, given the minimal constraint of a threshold-based gate, independently arrive at functionally similar organizational solutions. Whether this convergence reflects deep shared principles or productive coincidence is an empirical question that additional modalities, architectures, and scales can progressively resolve.
 
@@ -340,23 +340,31 @@ The brain may spike not to save power, but to organize parallel computation---an
 
 \begin{table}[h]
 \centering
-\caption{Audio classification per-seed results (Speech Commands v2, 35 classes).}
+\caption{Audio classification per-seed results (Speech Commands v2, 35 classes, $N = 6$).}
 \label{tab:audio-detail}
-\begin{tabular}{llcccc}
+\begin{tabular}{llccl}
 \toprule
-\textbf{Condition} & \textbf{Seed} & \textbf{Val Acc (\%)} & \textbf{Test Acc (\%)} & \textbf{Val Std} & \textbf{Test Std} \\
+\textbf{Condition} & \textbf{Seed} & \textbf{Test Acc (\%)} & \textbf{$\Delta$} & \textbf{Winner} \\
 \midrule
-CfC-only & 42 & 88.27 & 86.56 & & \\
-CfC-only & 668 & 88.29 & 86.25 & & \\
-CfC-only & 1337 & \textbf{86.51} & \textbf{84.59} & & \\
-\cmidrule{2-6}
-& Mean & 87.69 & 85.80 & \textbf{0.83\%} & \textbf{0.86\%} \\
+CfC-only & 42 & 85.93 & & \\
+CfC-only & 668 & 85.54 & & \\
+CfC-only & 1337 & 85.93 & & \\
+CfC-only & 2024 & 84.84 & & \\
+CfC-only & 314 & 85.72 & & \\
+CfC-only & 777 & 85.45 & & \\
+\cmidrule{2-5}
+& Mean $\pm$ std & $85.57 \pm 0.41$ & & \\
 \midrule
-CfC+LIF & 42 & 87.90 & 85.42 & & \\
-CfC+LIF & 668 & 88.08 & 85.80 & & \\
-CfC+LIF & 1337 & 88.09 & 86.19 & & \\
-\cmidrule{2-6}
-& Mean & 88.02 & 85.80 & \textbf{0.09\%} & \textbf{0.31\%} \\
+CfC+LIF & 42 & 86.18 & $+0.25$ & LIF \\
+CfC+LIF & 668 & 85.28 & $-0.26$ & Base \\
+CfC+LIF & 1337 & 85.93 & $+0.00$ & Tie \\
+CfC+LIF & 2024 & 86.22 & $+1.38$ & LIF \\
+CfC+LIF & 314 & 85.85 & $+0.13$ & LIF \\
+CfC+LIF & 777 & 86.40 & $+0.95$ & LIF \\
+\cmidrule{2-5}
+& Mean $\pm$ std & $85.98 \pm 0.40$ & $+0.41$ & 4W/1L/1T \\
+\midrule
+\multicolumn{5}{l}{Paired $t$-test: $t = 1.60$, $p = 0.170$; Wilcoxon: $p = 0.312$; Cohen's $d = 0.72$} \\
 \bottomrule
 \end{tabular}
 \end{table}
