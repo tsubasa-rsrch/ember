@@ -44,7 +44,7 @@ Artificial and Biological Neural Systems}
 
 % ============================================================
 \begin{abstract}
-We introduce Leaky Integrate-and-Fire (LIF) gating, a minimal biologically-inspired mechanism (24--1,536 parameters) that produces two separable effects across modalities: (1)~\textbf{universal regularization}---cross-seed variance reduction of up to $7\times$ on text with negligible mean performance change, and consistent floor-raising on audio (preventing catastrophic initialization failures); and (2)~\textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers ($-0.75\%$ loss, $7\times$ variance reduction) while having zero performance effect on text CfC, yet still regularizing audio CfC ($+0.41\%$, Cohen's $d = 0.72$, 4/6 wins at $N{=}6$). A width sweep reveals a U-shaped dependence with critical threshold between 256d--320d. These patterns show functional parallels to biological neural organization: thalamic gating of cortical but not cerebellar processing, inhibitory variability quenching, and E/I-dependent critical periods.
+We introduce Leaky Integrate-and-Fire (LIF) gating, a minimal biologically-inspired mechanism (24--144 parameters) that produces two separable effects across modalities: (1)~\textbf{universal regularization}---cross-seed variance reduction of up to $7\times$ on text with negligible mean performance change, and consistent floor-raising on audio (preventing catastrophic initialization failures); and (2)~\textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers ($-0.75\%$ loss, $7\times$ variance reduction) while having zero performance effect on text CfC, yet still regularizing audio CfC ($+0.41\%$, Cohen's $d = 0.72$, 4/6 wins at $N{=}6$). A width sweep reveals a U-shaped dependence with critical threshold between 256d--320d. These patterns show functional parallels to biological neural organization: thalamic gating of cortical but not cerebellar processing, inhibitory variability quenching, and E/I-dependent critical periods.
 \end{abstract}
 
 % ============================================================
@@ -54,7 +54,7 @@ Biological neural circuits exhibit progressive specialization, critical periods,
 
 We ask: \emph{can a minimal biologically-inspired gate induce biological-like organization in artificial networks across modalities?}
 
-We introduce Ember, which augments standard architectures with Leaky Integrate-and-Fire (LIF) gates---the simplest model of neural spiking. Applied post-softmax in Transformers and post-hidden-state in CfC networks \cite{hasani2022closed}, the LIF gate adds only 24--1,536 parameters while producing organizational effects exceeding its parametric footprint. We evaluate on character-level text (Shakespeare) across multiple Transformer scales and a CfC baseline, and 35-class audio keyword spotting (Speech Commands v2 \cite{warden2018speech}).
+We introduce Ember, which augments standard architectures with Leaky Integrate-and-Fire (LIF) gates---the simplest model of neural spiking. Applied post-softmax in Transformers and post-hidden-state in CfC networks \cite{hasani2022closed}, the LIF gate adds only 24--144 parameters while producing organizational effects exceeding its parametric footprint. We evaluate on character-level text (Shakespeare) across multiple Transformer scales and a CfC baseline, and 35-class audio keyword spotting (Speech Commands v2 \cite{warden2018speech}).
 
 Our key contributions:
 \begin{enumerate}
@@ -108,7 +108,7 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold (ini
 
 \subsection{Experimental Setup}
 
-\textbf{Text.} Character-level Shakespeare (1.1M chars). Transformer base scale: 6L/6H/384d ($\sim$10.65M params), block\_size=256, 5,000 iterations, 3 seeds. Width sweep: 5 additional scales (128d--384d, varying depth/heads; Appendix Table~\ref{tab:cross-scale}), block\_size=128, 3,000 iterations, 3 seeds; extended 8-seed ablations at XS and Mid. CfC: 2--4 layers, 192--512 units. LIF adds 3 learnable parameters per head per layer (24--216 total in Transformers).
+\textbf{Text.} Character-level Shakespeare (1.1M chars). Transformer base scale: 6L/6H/384d ($\sim$10.65M params), block\_size=256, 5,000 iterations, 3 seeds. Width sweep: 5 additional scales (128d--384d, varying depth/heads; Appendix Table~\ref{tab:cross-scale}), block\_size=128, 3,000 iterations, 3 seeds; extended 8-seed ablations at XS and Mid. CfC: 2--4 layers, 192--512 units. LIF adds 3 learnable parameters per head per layer (24--144 total in Transformers).
 
 \textbf{Audio.} Speech Commands v2 \cite{warden2018speech}: 35-class, 105K utterances (1s, 16kHz). Mel spectrogram $\to$ 4-layer CfC (192 units) $\to$ classifier. $\sim$500K params + 1,536 LIF params. AdamW, 15 epochs, 6 seeds.
 
@@ -239,7 +239,7 @@ Flat minima correlate with generalization \cite{hochreiter1997flat,keskar2017lar
 % ============================================================
 \section{Conclusion}
 
-LIF gating (24--1,536 parameters) produces two separable effects: \textbf{universal regularization}---up to $7\times$ variance reduction on text and consistent floor-raising on audio---and \textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers but not CfC text, paralleling thalamic gating of cortical but not cerebellar processing. The brain may spike not to save power, but to organize parallel computation---and artificial networks, given the minimal constraint of a threshold gate, arrive at functionally similar solutions.
+LIF gating (24--144 parameters) produces two separable effects: \textbf{universal regularization}---up to $7\times$ variance reduction on text and consistent floor-raising on audio---and \textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers but not CfC text, paralleling thalamic gating of cortical but not cerebellar processing. The brain may spike not to save power, but to organize parallel computation---and artificial networks, given the minimal constraint of a threshold gate, arrive at functionally similar solutions.
 
 
 % ============================================================
