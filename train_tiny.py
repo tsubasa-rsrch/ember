@@ -218,15 +218,26 @@ def train_one(model_type, seed, device, train_data, val_data, meta, scale='xs'):
     total_time = time.time() - t0
     print(f"  Done: best_val={best_val_loss:.4f} in {total_time:.1f}s")
 
-    return {
+    # Extract LIF parameters if applicable
+    lif_params = {}
+    if model_type in ('lif', 'sigmoid'):
+        for name, param in model.named_parameters():
+            if any(k in name for k in ('threshold', 'leak', 'steepness', 'sigmoid_gate')):
+                lif_params[name] = param.detach().cpu().tolist()
+
+    result = {
         'model_type': model_type,
         'mode_str': mode_str,
+        'scale': scale,
         'seed': seed,
         'n_params': n_params,
         'best_val_loss': best_val_loss,
         'total_time': total_time,
         'history': history,
     }
+    if lif_params:
+        result['lif_params'] = lif_params
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -312,8 +323,8 @@ def main():
                         help="Random seed (single run)")
     parser.add_argument('--iters', type=int, default=None,
                         help="Override MAX_ITERS")
-    parser.add_argument('--scale', choices=['xs', 'small', 'medium', 'mid', 'wide'], default='xs',
-                        help="Model scale preset (xs=0.4M, small=2M, medium=5M, mid=8M, wide=14M)")
+    parser.add_argument('--scale', choices=['xs', 'small', 'medium', 'mid', 'wide', 'full'], default='xs',
+                        help="Model scale preset (xs=0.4M, small=2M, medium=5M, mid=8M, wide=14M, full=43M)")
     args = parser.parse_args()
 
     global MAX_ITERS

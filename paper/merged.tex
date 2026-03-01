@@ -44,24 +44,25 @@ Artificial and Biological Neural Systems}
 
 % ============================================================
 \begin{abstract}
-We introduce Leaky Integrate-and-Fire (LIF) gating, a minimal biologically-inspired mechanism (108--1,536 parameters) that produces two separable effects across modalities: (1)~\textbf{universal regularization}---cross-seed variance reduction of $2.8$--$9.2\times$ on both text and audio tasks with negligible mean performance change; and (2)~\textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers ($-0.75\%$ loss, $7\times$ variance reduction) while having zero performance effect on text CfC, yet still regularizing audio CfC ($9.2\times$ variance reduction, complete catastrophic failure prevention). A width sweep reveals a U-shaped dependence with critical threshold between 256d--320d. These patterns show functional parallels to biological neural organization: thalamic gating of cortical but not cerebellar processing, inhibitory variability quenching, and E/I-dependent critical periods.
+We introduce Leaky Integrate-and-Fire (LIF) gating, a minimal biologically-inspired mechanism (24--1,536 parameters) that produces two separable effects across modalities: (1)~\textbf{universal regularization}---cross-seed variance reduction of up to $7\times$ on text with negligible mean performance change, and consistent floor-raising on audio (preventing catastrophic initialization failures); and (2)~\textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers ($-0.75\%$ loss, $7\times$ variance reduction) while having zero performance effect on text CfC, yet still regularizing audio CfC ($+0.41\%$, Cohen's $d = 0.72$, 4/6 wins at $N{=}6$). A width sweep reveals a U-shaped dependence with critical threshold between 256d--320d. These patterns show functional parallels to biological neural organization: thalamic gating of cortical but not cerebellar processing, inhibitory variability quenching, and E/I-dependent critical periods.
 \end{abstract}
 
 % ============================================================
 \section{Introduction}
 
-Biological neural circuits exhibit exquisite organizational structure---progressive specialization across cortical layers, critical periods of heightened plasticity, and precise excitatory-inhibitory (E/I) balance---all emerging from relatively simple local mechanisms. Crucially, these organizational principles are \emph{modality-independent}: the same GABAergic inhibitory circuit motifs produce different but functionally analogous laminar organizations in visual, auditory, and somatosensory cortex \cite{douglas2004neuronal}. Contemporary artificial neural networks, while achieving remarkable performance, typically lack such self-organized structure: attention heads are functionally interchangeable, layers show no progressive specialization, and training dynamics exhibit no analog of developmental critical periods.
+Biological neural circuits exhibit progressive specialization, critical periods, and precise excitatory-inhibitory (E/I) balance---all emerging from simple local mechanisms. These principles are \emph{modality-independent}: the same GABAergic motifs produce different but analogous laminar organizations across sensory cortices \cite{douglas2004neuronal}. Artificial neural networks typically lack such self-organized structure.
 
-We ask: \emph{can a minimal biologically-inspired gating mechanism induce biological-like organization in artificial neural networks, and does this effect generalize across input modalities?}
+We ask: \emph{can a minimal biologically-inspired gate induce biological-like organization in artificial networks across modalities?}
 
-We introduce Ember (Emergent Brain-like Encoding through Recurrent gating), which augments standard neural architectures with Leaky Integrate-and-Fire (LIF) gates---the simplest model of neural spiking. Applied post-softmax in Transformer attention and post-hidden-state in CfC networks \cite{hasani2022closed}, the LIF gate adds only 108--1,536 learnable parameters while producing organizational effects that far exceed its parametric footprint. We evaluate LIF gating on two modalities---character-level text modeling (Shakespeare corpus) across multiple Transformer scales and a CfC baseline, and 35-class audio keyword spotting (Google Speech Commands v2 \cite{warden2018speech}) with CfC---providing cross-modal evidence for or against universality.
+We introduce Ember, which augments standard architectures with Leaky Integrate-and-Fire (LIF) gates---the simplest model of neural spiking. Applied post-softmax in Transformers and post-hidden-state in CfC networks \cite{hasani2022closed}, the LIF gate adds only 24--1,536 parameters while producing organizational effects exceeding its parametric footprint. We evaluate on character-level text (Shakespeare) across multiple Transformer scales and a CfC baseline, and 35-class audio keyword spotting (Speech Commands v2 \cite{warden2018speech}).
 
 Our key contributions:
 \begin{enumerate}
-    \item \textbf{Cross-modal variance reduction}: LIF reduces cross-seed std by $2.8$--$9.2\times$ on text and audio, preventing catastrophic seed-dependent failures (\S\ref{sec:text-results}--\ref{sec:smoking-gun}).
+    \item \textbf{Cross-modal regularization}: LIF reduces cross-seed variance by up to $7\times$ on text and prevents catastrophic seed-dependent failures on audio (\S\ref{sec:text-results}--\ref{sec:seed1337}).
     \item \textbf{Spontaneous E/I balance}: Combining LIF with inhibitory mechanisms achieves $-0.79\%$ with seed-invariant critical periods (\S\ref{sec:ei-balance}--\ref{sec:critical-period}).
     \item \textbf{Architecture selectivity}: LIF improves Transformers but not text CfC, paralleling thalamic gating of cortical but not cerebellar processing (\S\ref{sec:cross-arch}).
     \item \textbf{Width U-curve}: Critical threshold between 256d--320d (\S\ref{sec:width}).
+    \item \textbf{In silico neuroanatomy}: LIF-gated networks provide a controlled experimental system where biological motifs can be inserted, removed, or replaced (e.g., SigmoidGate control), enabling causal experiments impossible in living tissue (\S\ref{sec:controls},~\S\ref{sec:neuroanatomy}).
 \end{enumerate}
 
 
@@ -107,9 +108,9 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold (ini
 
 \subsection{Experimental Setup}
 
-\textbf{Text experiments.} Character-level Shakespeare (1.1M characters), next-character prediction. Transformer: 6-layer, 12-head, 768d (42.7M params) as the full-scale model, with additional scales from 2L/4H/128d (0.42M) to 6L/8H/384d (10.7M) for the width sweep. CfC: 2--4 layers, 192--512 units. Training: AdamW, 3,000 iterations, 3 seeds (42, 668, 1337); extended 8-seed ablations at XS and Mid scales. LIF adds 108 parameters (Transformer full-scale) or 24--96 parameters (CfC).
+\textbf{Text.} Character-level Shakespeare (1.1M chars). Transformer base scale: 6L/6H/384d ($\sim$10.65M params), block\_size=256, 5,000 iterations, 3 seeds. Width sweep: 5 additional scales (128d--384d, varying depth/heads; Appendix Table~\ref{tab:cross-scale}), block\_size=128, 3,000 iterations, 3 seeds; extended 8-seed ablations at XS and Mid. CfC: 2--4 layers, 192--512 units. LIF adds 3 learnable parameters per head per layer (24--216 total in Transformers).
 
-\textbf{Audio experiments.} Google Speech Commands v2 \cite{warden2018speech}: 35-class keyword spotting, 105,829 utterances (1s, 16kHz). Architecture: Mel spectrogram (80 bins) $\to$ linear projection ($80 \to 128$) $\to$ 4-layer CfC (192 units/layer) $\to$ mean pooling $\to$ classifier ($128 \to 35$). Total: $\sim$500K parameters + 1,536 LIF parameters. Training: AdamW, lr $10^{-3}$, batch 64, 15 epochs, dropout 0.1, gradient clipping 1.0, 6 seeds (42, 668, 1337, 2024, 314, 777).
+\textbf{Audio.} Speech Commands v2 \cite{warden2018speech}: 35-class, 105K utterances (1s, 16kHz). Mel spectrogram $\to$ 4-layer CfC (192 units) $\to$ classifier. $\sim$500K params + 1,536 LIF params. AdamW, 15 epochs, 6 seeds.
 
 
 % ============================================================
@@ -120,7 +121,7 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold (ini
 
 \begin{table}[h]
 \centering
-\caption{Full-scale Transformer ablation (6L/12H/768d, 42.7M params). Mean $\pm$ std over 3 seeds.}
+\caption{Base-scale Transformer ablation (6L/6H/384d, $\sim$10.65M params, block\_size=256, 5000 iters). Mean $\pm$ std over 3 seeds.}
 \label{tab:full-ablation}
 \begin{tabular}{lccc}
 \toprule
@@ -142,28 +143,21 @@ LIF gate alone achieves $-0.75\%$ validation loss improvement with $7\times$ var
 \subsection{Audio: CfC Classification}
 \label{sec:audio-results}
 
-On Speech Commands v2 (35-class keyword spotting, $N = 6$ seeds), CfC+LIF achieves $85.98\% \pm 0.40$ test accuracy vs.\ CfC-only $85.57\% \pm 0.41$ (mean $\Delta = +0.41\%$, $p = 0.170$ paired $t$-test, Cohen's $d = 0.72$). LIF wins 4/6 seeds, with one tie and one base win. While not reaching significance at $N = 6$, the medium effect size and consistent directional improvement parallel the XS text result at smaller sample sizes. The original 3-seed subset (42, 668, 1337) showed identical means with dramatic variance reduction ($9.2\times$ val, $2.8\times$ test); the extended 6-seed analysis confirms this pattern: LIF does not dramatically change the ceiling but consistently raises the floor. Per-seed results are in Appendix Table~\ref{tab:audio-detail}.
+On Speech Commands v2 (35-class keyword spotting, $N = 6$ seeds), CfC+LIF achieves $85.98\% \pm 0.40$ test accuracy vs.\ CfC-only $85.57\% \pm 0.41$ (mean $\Delta = +0.41\%$, $p = 0.170$ paired $t$-test, Cohen's $d = 0.72$). LIF wins 4/6 seeds, with one tie and one base win. While not reaching significance at $N = 6$, the medium effect size and consistent directional improvement parallel the XS text result at smaller sample sizes.
 
-\subsection{The Seed 1337 Smoking Gun}
-\label{sec:smoking-gun}
+\textbf{Note on variance reduction estimates.} The original 3-seed subset (42, 668, 1337) showed $9.2\times$ validation variance reduction and $2.8\times$ test variance reduction. However, this was driven primarily by seed 1337's catastrophic baseline failure (\S\ref{sec:seed1337}), which inflated the baseline std. The full $N{=}6$ analysis shows test std ratio of $1.03\times$ (Base: 0.41, LIF: 0.40), indicating that LIF's audio benefit operates through \emph{floor-raising} (preventing worst-case outcomes) rather than uniform variance compression. Per-seed results are in Appendix Table~\ref{tab:audio-detail}.
 
-Seed 1337 provides the clearest mechanistic evidence for LIF's regularization. In the CfC-only baseline, validation accuracy drops catastrophically at epoch 9 ($85.15\% \to 79.20\%$, a 5.95 percentage point collapse), partially recovering to 86.51\% by epoch 14. Test accuracy: 84.59\%, the worst of all six runs. In CfC+LIF with the same seed, epoch 9 validation is 86.53\% (improving, not collapsing). Final validation: 88.09\%, test: 86.19\%---the catastrophic dip is \textbf{completely absent}.
+\subsection{Illustrative Case: Seed 1337 Catastrophic Failure Prevention}
+\label{sec:seed1337}
 
-This demonstrates LIF's core mechanism: it does not improve the ceiling; it \emph{raises the floor}. The same random initialization that causes a training catastrophe in the baseline produces stable, above-average performance with LIF gating (Figure~\ref{fig:smoking-gun}).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.75\textwidth]{figures/audio_fig2_learning_curves.png}
-\caption{\textbf{Seed 1337 smoking gun.} CfC-only shows catastrophic validation collapse at epoch 9 ($-5.95$ points), completely absent in CfC+LIF.}
-\label{fig:smoking-gun}
-\end{figure}
+A single seed illustrates the underlying mechanism. In CfC-only with seed 1337, validation accuracy drops catastrophically at epoch 9 ($85.15\% \to 79.20\%$, $-5.95$ points), partially recovering to 86.51\% by epoch 14 (test: 84.59\%, worst of all runs). With CfC+LIF, epoch 9 validation is 86.53\% (improving, not collapsing); test: 86.19\%. LIF does not improve the ceiling; it \emph{raises the floor} (Appendix Figure~\ref{fig:seed1337}). This is a single-seed observation; generalizability depends on the aggregate statistics in Tables~\ref{tab:cross-modal} and \ref{tab:audio-detail}.
 
 \subsection{Cross-Modal Comparison}
 \label{sec:cross-modal}
 
 \begin{table}[h]
 \centering
-\caption{Cross-modal summary. Three configurations spanning 2 backbones $\times$ 2 modalities $\times$ 2 tasks.}
+\caption{Cross-modal summary: 2 backbones $\times$ 2 modalities $\times$ 2 tasks.}
 \label{tab:cross-modal}
 \begin{tabular}{lllcc}
 \toprule
@@ -171,87 +165,99 @@ This demonstrates LIF's core mechanism: it does not improve the ceiling; it \emp
 \midrule
 Transformer & Text & LM (loss) & $-0.75\%$ & $7.0\times$ \\
 CfC & Text & LM (loss) & $+0.01\%$ & $1.0\times$ \\
-CfC & Audio & Classification & $+0.41\%$ ($p{=}0.17$, $d{=}0.72$) & $1.03\times$ (test, $N{=}6$) \\
+CfC & Audio & Classification & $+0.41\%$ ($p{=}0.17$, $d{=}0.72$) & $1.03\times$ (test) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The universal regularizer pattern is clear: where baseline variance is non-trivial, LIF consistently reduces it by large factors while leaving mean performance essentially unchanged. This parallels how biological inhibitory circuits reduce trial-to-trial neural variability (Fano factor reduction) without changing mean firing rates \cite{churchland2010stimulus}.
-
-\textbf{Modality-dependent organization.} While regularization is universal, the depth-entropy profile is modality-dependent:
-\begin{itemize}
-    \item \textbf{Transformer (Text)}: Monotonically increasing entropy gradient (L0: 1.25 $\to$ L5: 2.47). Shallow layers narrow attention; deep layers broaden.
-    \item \textbf{CfC (Text)}: Monotonically increasing neuron entropy (L0: 0.067 $\to$ L3: 0.161). Progressive specialization with depth.
-    \item \textbf{CfC (Audio)}: Mid-layer entropy peak (L0: 0.110, L1: 0.140, L2: 0.098, L3: 0.060). Broad mid-layer processing followed by deep-layer integration.
-\end{itemize}
-This dissociation suggests two separable effects: regularization from the threshold mechanism itself (gradient landscape modification), and organization from task-driven learning of where to gate. This mirrors neuroscience findings that auditory and visual cortex exhibit different laminar processing patterns despite using the same inhibitory circuit motifs \cite{douglas2004neuronal}.
-
-\textbf{Fire rate regime differences.} Transformer LIF produces sparse firing with functional head differentiation (pointer/gatherer/focuser roles). CfC LIF---both text and audio---operates in a near-complete firing regime (fire rate $\approx 1.0$), with regularization persisting even when thresholds converge to near-zero values. This suggests the mechanism operates through gradient-level effects (implicit loss landscape smoothing) rather than activation-level gating.
+Where baseline variance is non-trivial, LIF consistently reduces it while leaving mean performance unchanged---paralleling biological variability quenching \cite{churchland2010stimulus}. While regularization is universal, depth-entropy profiles are modality-dependent: Transformer text shows monotonically increasing attention entropy with depth; CfC text shows progressive neuron specialization; CfC audio shows a mid-layer peak pattern (Appendix Figure~\ref{fig:cross-modal-entropy}). This suggests two separable effects: regularization from threshold dynamics, and organization from task-driven learning of where to gate \cite{douglas2004neuronal}. Notably, CfC operates in a near-complete firing regime (fire rate $\approx 1.0$), suggesting the mechanism works through gradient-level loss landscape smoothing rather than activation-level gating.
 
 \subsection{Width Dependence}
 \label{sec:width}
 
-\begin{table}[h]
-\centering
-\caption{Cross-scale LIF effectiveness (text Transformer). All 6L/8H except XS (2L/4H). 3 seeds per condition.}
-\label{tab:cross-scale}
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Scale} & \textbf{Config} & \textbf{Std $\pm$ std} & \textbf{LIF $\pm$ std} & \textbf{$\Delta$} \\
-\midrule
-XS & 2L/4H/128d & $1.6171 \pm 0.0060$ & $1.6155 \pm 0.0058$ & $-0.10\%$ \\
-Small & 6L/8H/192d & $1.5041 \pm 0.0016$ & $1.5094 \pm 0.0043$ & $+0.35\%$ \\
-Medium & 6L/8H/256d & $1.4787 \pm 0.0022$ & $1.4839 \pm 0.0037$ & $+0.35\%$ \\
-Mid & 6L/8H/320d & $1.4739 \pm 0.0050$ & $1.4700 \pm 0.0030$ & $\mathbf{-0.26\%}$ \\
-Wide & 6L/8H/384d & $1.4862 \pm 0.0113$ & $1.4845 \pm 0.0067$ & $-0.12\%$ \\
-Full & 6L/12H/768d & $1.4784 \pm 0.0104$ & $1.4673 \pm 0.0015$ & $\mathbf{-0.75\%}$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The LIF effect traces a \textbf{U-shaped curve}: beneficial at XS (128d), harmful through Small (192d) and Medium (256d), then recovering sharply at Mid (320d) and continuing through Wide (384d) to Full (768d) (Figure~\ref{fig:ucurve}).
+The LIF effect traces a \textbf{U-shaped curve} across 5 Transformer scales in the width sweep (Appendix Table~\ref{tab:cross-scale}): beneficial at XS (128d, $-0.10\%$), harmful through Small--Medium (192--256d, $+0.35\%$), then recovering sharply at Mid (320d, $-0.26\%$) and continuing through Wide (384d, $-0.12\%$; Figure~\ref{fig:ucurve}). The base-scale result ($-0.75\%$, Table~\ref{tab:full-ablation}) confirms the recovery continues with deeper training.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.75\textwidth]{figures/tiny_u_curve.png}
-\caption{\textbf{U-shaped width dependence.} LIF delta (\%) across 6 scales. Critical threshold between 256d and 320d.}
+\includegraphics[width=0.7\textwidth]{figures/tiny_u_curve.png}
+\caption{\textbf{U-shaped width dependence.} LIF delta (\%) across 6 scales. Critical threshold between 256d--320d.}
 \label{fig:ucurve}
 \end{figure}
 
-\textbf{The critical controlled comparison.} Medium, Mid, and Wide share depth (6L) and head count (8H), differing only in \texttt{n\_embd} (256 vs 320 vs 384). At 256d, LIF hurts ($+0.35\%$, 0/3 seeds). At 320d, LIF helps ($-0.26\%$, 3/3). This isolates \textbf{width}---not depth, not head count---as the decisive variable.
+\textbf{Width isolation.} Medium, Mid, and Wide share depth (6L) and head count (8H), differing only in \texttt{n\_embd}. At 256d, LIF hurts ($+0.35\%$, 0/3); at 320d, it helps ($-0.26\%$, 3/3)---isolating width as the decisive variable. Variance reduction tracks this curve: $40$--$86\%$ decrease where LIF helps, up to $68\%$ increase where it hurts. Cortical minicolumns similarly require $\sim$80--120 neurons to sustain E/I balance \cite{hensch2005critical}; below this, inhibition is destructive.
 
-\textbf{Variance reduction tracks the U-curve.} Where LIF helps (Mid, Wide, Full), variance decreases by 40--86\%. Where LIF hurts (Small, Medium), variance \emph{increases} by up to 68\%. The critical width threshold lies between 256d and 320d, below which the representation lacks sufficient redundancy to absorb threshold-based filtering.
-
-\textbf{Biological parallel.} Cortical minicolumns require $\sim$80--120 neurons per layer to sustain E/I balance \cite{hensch2005critical}. Below this threshold, inhibition becomes destructive rather than organizational---the same pattern we observe at medium scale.
-
-\subsection{Cross-Architecture: Transformer vs CfC}
+\subsection{Cross-Architecture and Non-Biological Control}
 \label{sec:cross-arch}
-
-LIF improves Transformers at every text scale tested ($-0.07\%$ to $-0.75\%$) while having zero performance effect on CfC text ($+0.01\%$ to $+0.10\%$; Appendix Table~\ref{tab:cross-arch}). The Wide comparison (Transformer 10.7M vs CfC 8.95M, both 384d) isolates backbone architecture as the sole variable. Transformer attention computes all token-pair relationships simultaneously---massively parallel, redundant information flow that threshold-based gating can productively filter. CfC continuous-time dynamics update hidden state sequentially through an ODE; each update is already a filtered integration. LIF \emph{does} regularize CfC on audio ($9.2\times$ variance reduction, \S\ref{sec:audio-results}), suggesting the dissociation is task-specific, not absolute.
-
-\subsection{Non-Biological Gate Control}
 \label{sec:controls}
 
-To isolate biological structure from parameter-count effects, we introduce a \textbf{SigmoidGate} control with matched parameters (3 per head per layer) at the identical post-softmax position, applying smooth modulation without fire/smolder duality or leak dynamics (Appendix Table~\ref{tab:controls}). Results at three scales reveal a clear progression: at \textbf{XS} (128d), LIF $\equiv$ Sigmoid to seven decimal places---the improvement is a pure parameter-count effect. At \textbf{Medium} (256d), both gates degrade equally ($+0.35\%$ LIF, $+0.41\%$ Sigmoid)---the U-curve valley is gate-generic. At \textbf{Wide} (384d), LIF's advantage becomes $10\times$ stronger than Sigmoid ($-0.11\%$ vs $-0.01\%$). Below the width threshold, any gate suffices; above it, biological structure---fire/smolder duality, threshold-mediated sparsity---provides genuine regularization that smooth gating cannot replicate.
+\textbf{Architecture selectivity.} LIF improves Transformers at every text scale ($-0.07\%$ to $-0.75\%$) while having zero effect on CfC text ($+0.01\%$ to $+0.10\%$; Appendix Table~\ref{tab:cross-arch}). Transformer attention computes all token-pair relationships in parallel---redundant flow that threshold gating can filter. CfC updates hidden state sequentially through an ODE, already a filtered integration. LIF \emph{does} regularize CfC on audio (\S\ref{sec:audio-results}): audio classification involves higher input variability (continuous spectrograms vs.\ discrete tokens), where LIF's gradient-level smoothing (\S\ref{sec:cross-modal}) has more room to improve robustness. The dissociation is task-specific rather than architecture-absolute.
+
+\textbf{SigmoidGate control.} To isolate biological structure from parameter count, we test a SigmoidGate with matched parameters at the identical position, without fire/smolder duality (Appendix Table~\ref{tab:controls}). At XS (128d), LIF $\equiv$ Sigmoid (pure parameter effect). At Medium (256d), both degrade equally (gate-generic). At Wide (384d), LIF is $10\times$ stronger ($-0.11\%$ vs $-0.01\%$). Above the width threshold, biological structure provides regularization that smooth gating cannot replicate.
 
 % ============================================================
 \section{Analysis}
 
-\subsection{Critical Period}
+\subsection{Critical Period and E/I Balance}
 \label{sec:critical-period}
-
-At approximately iteration 1600 ($\sim$53\% of training), LIF-equipped Transformers undergo a sharp transition: thresholds stabilize at non-trivial values, head roles differentiate, and hierarchical depth organization emerges. Before this point, the LIF gate is effectively identity.
-
-This timing is robust across random seeds, suggesting a genuine phase transition. The parallel to biological critical periods \cite{hensch2005critical} is multi-dimensional: biological critical periods are triggered by PV+ GABAergic interneuron maturation (establishing E/I balance), are endogenously timed, and produce selective circuit strengthening. Ember's critical period shares all three features: it requires both excitatory and inhibitory components (\S\ref{sec:ei-balance}), emerges from learning dynamics rather than external scheduling, and produces head role differentiation.
-
-\subsection{Spontaneous E/I Balance}
 \label{sec:ei-balance}
 
-The v3.5 experiments reveal that combining excitatory (LIF gating) and inhibitory (refractory + head-persistence) mechanisms achieves optimal performance:
+At iteration $\sim$1600 ($\sim$53\% of training), LIF Transformers undergo a sharp transition: thresholds stabilize, head roles differentiate, and depth organization emerges. This timing is robust across seeds, paralleling biological critical periods \cite{hensch2005critical}: both are triggered by E/I balance maturation, endogenously timed, and produce selective circuit strengthening. Combining LIF (excitatory) with refractory+head-persistence (inhibitory) yields optimal $-0.79\%$ ($1.4667 \pm 0.0012$); inhibitory mechanisms alone degrade performance (Appendix Table~\ref{tab:ei-balance}, Figure~\ref{fig:ei}). Post-critical-period, heads differentiate into pointer/gatherer/focuser roles with $\sim$25\% ``gatekeepers'' per layer (Appendix Figure~\ref{fig:head-params}), paralleling cortical inhibitory interneuron proportions.
+
+
+% ============================================================
+\section{Discussion}
+
+\subsection{Why Small Loss Delta, Large Organizational Impact?}
+
+Loss improvements are modest ($-0.75\%$) while organizational changes are dramatic ($7\times$ variance reduction, head specialization, E/I balance). LIF likely acts through loss landscape modification: near-zero thresholds create smooth nonlinearities preventing sharp minima \cite{hochreiter1997flat,keskar2017large}, paralleling biological variability quenching \cite{churchland2010stimulus}. The primary value is \emph{reliability}, not peak performance.
+
+\subsection{Neuroanatomical Correspondence}
+\label{sec:neuroanatomy}
+
+The thalamus gates cortical (parallel) but not cerebellar (sequential) processing \cite{schmahmann1997cerebrocerebellar}. LIF mirrors this: effective on Transformer attention but zero effect on CfC text. Per-head gatekeeper specialization ($\sim$25\%) parallels inhibitory interneuron proportions. The U-curve parallels phylogenetic width dependence: in fish (small forebrain), the thalamus serves as relay; in mammals with larger cortices, it performs selective gating \cite{butler2005comparative}. Avian brains achieve primate-level cognition through neuronal density rather than size \cite{olkowicz2016birds}, suggesting representational capacity---not volume---is critical, consistent with \texttt{n\_embd} determining LIF effectiveness.
+
+\textbf{\emph{In silico} advantage.} Biological brains cannot independently vary width and connectivity. Ember can: the SigmoidGate control (\S\ref{sec:controls}) shows that at matched width, biological gate structure produces $10\times$ stronger effects than smooth gating, suggesting fire/smolder duality is functionally meaningful only above a width threshold. We use ``parallels'' deliberately: these are structural correspondences, not mechanistic equivalences.
+
+\subsection{Limitations}
+
+\textbf{Statistical power}: XS 8-seed reaches significance ($p = 0.024$), but Mid ($p = 0.235$) and Audio ($p = 0.170$, $d = 0.72$) do not at current sample sizes. \textbf{Tasks}: One text and one audio task; vision, multi-task, and continuous speech untested. \textbf{Controls}: SigmoidGate tested at 3 scales ($N{=}3$); Full-scale comparison would strengthen the structural claim. \textbf{CfC}: Text null result may be task-specific. \textbf{Seed 1337}: Single-seed case study; should not be interpreted as independent evidence. \textbf{Analogies}: We claim functional correspondence, not structural equivalence.
+
+
+% ============================================================
+\section{Related Work}
+
+\textbf{Regularization.}
+Dropout \cite{srivastava2014dropout}, stochastic depth \cite{huang2016stochastic}, and batch normalization \cite{ioffe2015batch} operate on individual neurons, layers, or activation statistics. SAM \cite{foret2021sharpnessaware} seeks flat minima at the optimizer level. LIF differs by gating at the \emph{attention head} level with \emph{persistent} threshold state across tokens. Critically, dropout reduces variance but does not induce head specialization; LIF does both.
+
+\textbf{Sparse/gated attention and SNNs.}
+Sparse Transformers \cite{child2019generating}, MoE \cite{fedus2022switch}, and Lottery Tickets \cite{frankle2019lottery} exploit the insight that not all capacity is needed at all times. Qwen \cite{yang2025qwen3} uses sigmoid gates ($884$K params) per head. LIF uses $8{,}000\times$ fewer parameters with learned thresholds rather than fixed patterns. Unlike full SNN approaches \cite{maass1997networks,zhou2023spikformer,bellec2018long}, we transplant a single biological motif into standard attention, preserving floating-point computation while inheriting threshold-based organizational properties.
+
+\textbf{Neuroscience connections.}
+Flat minima correlate with generalization \cite{hochreiter1997flat,keskar2017large}; LIF may achieve flatness through threshold-induced smoothing. Stimulus-onset variability quenching \cite{churchland2010stimulus} is a biological analog of our cross-seed variance reduction. E/I balance is required for robust selectivity \cite{mackwood2021ei,rubin2017balanced,douglas2004neuronal}; our $\sim$75/25\% head ratio emerges spontaneously. Critical periods are gated by E/I maturation \cite{hensch2005critical,bengio2009curriculum}; our threshold crossover at iteration $\sim$1600 parallels this developmental transition.
+
+
+% ============================================================
+\section{Conclusion}
+
+LIF gating (24--1,536 parameters) produces two separable effects: \textbf{universal regularization}---up to $7\times$ variance reduction on text and consistent floor-raising on audio---and \textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF consistently improves Transformers but not CfC text, paralleling thalamic gating of cortical but not cerebellar processing. The brain may spike not to save power, but to organize parallel computation---and artificial networks, given the minimal constraint of a threshold gate, arrive at functionally similar solutions.
+
+
+% ============================================================
+\clearpage
+\appendix
+
+\section*{Appendix A: Detailed Tables and Figures}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/audio_fig2_learning_curves.png}
+\caption{\textbf{Seed 1337 case study.} CfC-only shows catastrophic validation collapse at epoch 9 ($-5.95$ points), absent in CfC+LIF. This illustrates the mechanism underlying aggregate variance reduction.}
+\label{fig:seed1337}
+\end{figure}
 
 \begin{table}[h]
 \centering
-\caption{v3.5 E/I balance results (6L/12H/768d). Best result in bold.}
+\caption{v3.5 E/I balance results (6L/6H/384d, base scale). Best result in bold.}
 \label{tab:ei-balance}
 \begin{tabular}{lcc}
 \toprule
@@ -265,78 +271,22 @@ Standard & $1.4784 \pm 0.0104$ & --- \\
 \end{tabular}
 \end{table}
 
-Inhibitory mechanisms alone degrade performance. Only their combination with excitatory LIF gating produces the best result ($-0.79\%$). This directly mirrors the biological finding that critical periods require both excitatory and inhibitory components: GAD65 knockout mice, which lack sufficient GABA, never open their critical period \cite{hensch2005critical}.
-
-\subsection{Per-Head Functional Specialization}
-
-Post-critical-period, attention heads spontaneously differentiate into pointer (sharp), gatherer (broad), and focuser (intermediate) roles---absent in standard training. At Wide scale, head L0H2 emerges as an extreme outlier (threshold $0.152$ vs mean $0.012$, leak $0.661$ vs $0.368$). Cross-seed analysis reveals a consistent $\sim$25\% ``gatekeeper'' ratio per layer (Figure~\ref{fig:head-params}), paralleling inhibitory interneuron proportions in biological cortex.
-
-
-% ============================================================
-\section{Discussion}
-
-\subsection{Why Small Loss Delta, Large Organizational Impact?}
-
-Loss improvements are modest ($-0.75\%$ Transformer) while organizational changes are dramatic ($7\times$ variance reduction, head specialization, E/I balance). We propose LIF acts primarily through loss landscape modification: near-zero thresholds introduce smooth nonlinearities (Eq.~\ref{eq:fire}) creating shallow valleys, preventing sharp minima \cite{hochreiter1997flat,keskar2017large}. This parallels biological variability quenching \cite{churchland2010stimulus}: inhibitory circuits reduce trial-to-trial variability without changing mean firing rates. The primary value is \emph{reliability}, not peak performance.
-
-\subsection{Neuroanatomical Correspondence}
-
-The thalamus gates cortical (parallel) but not cerebellar (sequential, brainstem-bypassing) processing \cite{schmahmann1997cerebrocerebellar}. LIF shows a parallel pattern: effective on Transformer attention but zero effect on CfC text dynamics. Per-head gatekeeper specialization ($\sim$25\% per layer) parallels Purkinje cell organization.
-
-\textbf{Phylogenetic width dependence.} All vertebrates possess a thalamus, but its function is width-dependent \cite{butler2005comparative}: in fish (small forebrain), the thalamus serves primarily as a relay; in mammals with larger cortices, it performs selective gating and integration. This parallels LIF's U-curve: at small model widths, LIF acts as mere relay (equivalent to any gate), while at sufficient width, it provides functional filtering. Avian brains offer a further parallel: parrots achieve primate-level cognition with 5--20g brains through extreme neuronal density rather than size \cite{olkowicz2016birds}, suggesting that the critical variable is representational capacity (neuron count $\times$ connectivity), not raw volume---consistent with our finding that \texttt{n\_embd}, not depth or head count, determines LIF effectiveness.
-
-We use ``parallels'' deliberately: these are structural correspondences, not mechanistic equivalences.
-
-\textbf{An \emph{in silico} advantage.} Biological brains cannot independently vary width, density, and connectivity---enlarging a brain changes all three simultaneously. Ember provides a controlled experimental system: \texttt{n\_embd} (width) can be varied while holding depth and head count constant, and gate structure (LIF vs Sigmoid) can be swapped without changing width. The SigmoidGate control (\S\ref{sec:controls}) exploits this: at matched width, biological gate structure (fire/smolder duality) produces $10\times$ stronger effects than smooth gating. This suggests that the all-or-nothing character of biological neurons---which LIF preserves and Sigmoid discards---is functionally meaningful only above a width threshold that permits role specialization.
-
-\subsection{Limitations}
-
-\begin{itemize}
-    \item \textbf{Statistical power}: Extended 8-seed ablations at XS confirmed significance ($p = 0.024$), but Mid-scale did not reach significance ($p = 0.235$). Audio $N = 6$ shows a medium effect (Cohen's $d = 0.72$, 4/6 wins) but does not reach significance ($p = 0.170$).
-    \item \textbf{Limited tasks}: One text task (character-level Shakespeare) and one audio task (keyword spotting). Generalization to vision, multi-task settings, and continuous speech is untested.
-    \item \textbf{Non-biological control}: SigmoidGate control (\S\ref{sec:controls}) tested at 3 scales. Directional LIF advantage at Wide ($10\times$ stronger effect) but not statistically significant at $N=3$. Full-scale (768d) comparison would strengthen the structural argument.
-    \item \textbf{CfC architecture-dependence}: The text CfC null result may be specific to the character-level LM setting, since audio CfC shows strong regularization. More CfC conditions are needed.
-    \item \textbf{Neuroanatomical analogies}: We claim functional correspondence, not structural equivalence. The 4E interpretation is suggestive, not mechanistic.
-    \item \textbf{Width threshold granularity}: Finer sweeps (e.g., 288d) could pinpoint the exact critical width.
-\end{itemize}
-
-\subsection{Future Work}
-
-\begin{itemize}
-    \item \textbf{AdaptiveLIF}: Dynamic thresholds $\theta = f(\mathbf{h})$ for content-dependent gating; preliminary probing on Qwen3-14B-4bit (4,800 LIF parameters) confirms zero-degradation identity initialization.
-    \item \textbf{Vision modality}: Testing LIF on Vision Transformers to extend cross-modal evidence.
-    \item \textbf{Larger-scale validation}: $N \geq 18$ seed ablations for 80\% power at mid-scale; formal $F$-tests for variance reduction.
-    \item \textbf{Full-scale SigmoidGate}: 768d comparison to confirm the structural divergence observed at 384d.
-\end{itemize}
-
-
-% ============================================================
-\section{Related Work}
-
-\textbf{Spiking Transformers.} Spikformer \cite{zhou2023spikformer} replaces attention with spike-based computation; we augment standard attention with a lightweight gate, preserving full computation.
-\textbf{Gated Attention.} Qwen \citep{yang2025qwen3} uses query-dependent sigmoid gates ($884$K params); our LIF achieves comparable organization with $8{,}000\times$ fewer parameters.
-\textbf{CfC Networks.} \cite{hasani2022closed} use ODE dynamics; our text CfC null result reveals task-modulated architecture-dependence.
-\textbf{Flat Minima and Generalization.} \cite{hochreiter1997flat} showed flat minima correlate with better generalization; \cite{keskar2017large} linked sharp minima to large-batch training degradation. LIF may achieve flatness through threshold-induced smoothing rather than optimizer-level interventions.
-\textbf{Neural Variability Quenching.} \cite{churchland2010stimulus} demonstrated that stimulus onset reduces trial-to-trial variability across cortical areas. LIF's cross-seed variance reduction is a functional analog: threshold gating quenches initialization-dependent variability.
-\textbf{E/I Balance.} \cite{mackwood2021ei,rubin2017balanced} show E/I balance is required for noise-robust selectivity; our v3.5 results show it emerging spontaneously.
-\textbf{4E Cognition.} The Embodied-Embedded-Enacted-Extended framework \cite{gallagher2023embodied,varela1991embodied,clark1998extended,dipaolo2014enactive} provides a theoretical lens: LIF changes the substrate (Embodied), creating mutual head dependency (Embedded), from which organization is enacted through training (Enacted), functioning as attention scaffolding (Extended).
-
-
-% ============================================================
-\section{Conclusion}
-
-We introduced LIF gating, a minimal biologically-inspired mechanism (108--1,536 parameters) that produces two separable effects across modalities: \textbf{universal regularization} ($2.8$--$9.2\times$ cross-seed variance reduction on both text and audio) and \textbf{modality-dependent organization} (depth hierarchy, head specialization, E/I balance). The seed 1337 catastrophic failure prevention on audio classification provides the clearest mechanistic evidence: threshold-based gating stabilizes the training landscape against initialization-dependent instabilities.
-
-Crucially, LIF gating is \textbf{not} universally effective for performance---it consistently improves Transformer text modeling but has zero performance effect on CfC text, while showing consistent directional improvement on CfC audio ($+0.41\%$, 4/6 wins, Cohen's $d = 0.72$). This pattern has functional parallels to brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing, and inhibitory circuits reduce variability across all sensory modalities.
-
-The brain may spike not to save power, but to organize parallel computation---and artificial networks, given the minimal constraint of a threshold-based gate, independently arrive at functionally similar organizational solutions. Whether this convergence reflects deep shared principles or productive coincidence is an empirical question that additional modalities, architectures, and scales can progressively resolve.
-
-
-% ============================================================
-\clearpage
-\appendix
-
-\section*{Appendix A: Detailed Tables}
+\begin{table}[h]
+\centering
+\caption{Width sweep: LIF effectiveness across 5 Transformer scales (block\_size=128, 3000 iters, 3 seeds each). Base-scale result (6L/6H/384d, $-0.75\%$) in Table~\ref{tab:full-ablation} uses different training setup.}
+\label{tab:cross-scale}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Scale} & \textbf{Config} & \textbf{Std $\pm$ std} & \textbf{LIF $\pm$ std} & \textbf{$\Delta$} \\
+\midrule
+XS & 2L/4H/128d & $1.6171 \pm 0.0060$ & $1.6155 \pm 0.0058$ & $-0.10\%$ \\
+Small & 4L/4H/192d & $1.5041 \pm 0.0016$ & $1.5094 \pm 0.0043$ & $+0.35\%$ \\
+Medium & 6L/8H/256d & $1.4787 \pm 0.0022$ & $1.4839 \pm 0.0037$ & $+0.35\%$ \\
+Mid & 6L/8H/320d & $1.4739 \pm 0.0050$ & $1.4700 \pm 0.0030$ & $\mathbf{-0.26\%}$ \\
+Wide & 6L/8H/384d & $1.4862 \pm 0.0113$ & $1.4845 \pm 0.0067$ & $-0.12\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[h]
 \centering
@@ -371,7 +321,7 @@ CfC+LIF & 777 & 86.40 & $+0.95$ & LIF \\
 
 \begin{table}[h]
 \centering
-\caption{Cross-architecture comparison at matched scales. $^\dagger$8-seed; others 3-seed.}
+\caption{Cross-architecture comparison at matched scales. $^\dagger$8-seed; $^*$base scale (block\_size=256, 5000 iters); others 3-seed with block\_size=128, 3000 iters.}
 \label{tab:cross-arch}
 \begin{tabular}{llccc}
 \toprule
@@ -380,7 +330,7 @@ CfC+LIF & 777 & 86.40 & $+0.95$ & LIF \\
 Transformer$^\dagger$ & XS (128d) & 1.6167 & 1.6156 & $-0.07\%$ \\
 Transformer$^\dagger$ & Mid (320d) & 1.4768 & 1.4741 & $-0.18\%$ \\
 Transformer & Wide (384d) & 1.4862 & 1.4845 & $-0.12\%$ \\
-Transformer & Full (768d) & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
+Transformer$^*$ & Base (384d) & 1.4784 & 1.4673 & $\mathbf{-0.75\%}$ \\
 \midrule
 CfC (text) & XS (128d) & 1.6375 & 1.6392 & $+0.10\%$ \\
 CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
@@ -411,12 +361,10 @@ CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
 \end{tabular}
 \end{table}
 
-\section*{Appendix B: Figures}
-
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/lif_head_parameters.png}
-\caption{\textbf{Per-head learned LIF parameters (wide scale, 6L/6H/384d).} Heatmaps of threshold, leak, and steepness. L0H2 emerges as an extreme outlier across all three parameters (threshold $0.152$, leak $0.661$, steepness $3.25$), with coordinated extremity suggesting functional gatekeeper specialization.}
+\caption{\textbf{Per-head learned LIF parameters (wide scale).} Heatmaps of threshold, leak, and steepness across layers and heads. One head per layer consistently emerges as a high-threshold outlier, with coordinated extremity across all three parameters suggesting functional gatekeeper specialization ($\sim$25\% per layer).}
 \label{fig:head-params}
 \end{figure}
 
@@ -427,7 +375,12 @@ CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
 \label{fig:ei}
 \end{figure}
 
-% showing the different depth-entropy profiles described in Section 3.4.
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/fig_cross_modal_entropy.png}
+\caption{\textbf{Cross-backbone, cross-modality depth-entropy profiles.} Left: Transformer text (attention entropy) shows monotonically increasing gradient with LIF. Center: CfC text (neuron firing entropy) shows monotonic increase from near-zero baseline. Right: CfC audio shows a mid-layer peak pattern distinct from text. All three share a common feature---LIF induces depth-dependent organization absent in baselines---while the specific profile is modality-dependent (\S\ref{sec:cross-modal}).}
+\label{fig:cross-modal-entropy}
+\end{figure}
 
 \bibliography{references}
 

@@ -11,6 +11,7 @@ Usage:
 import os
 import sys
 import time
+import json
 import pickle
 import argparse
 
@@ -118,6 +119,8 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
     )
 
     model = Ember(config).to(device)
+    n_params = sum(p.numel() for p in model.parameters())
+    print(f"Ember: {n_params/1e6:.2f}M parameters (LIF={'ON' if use_lif else 'OFF'})")
     optimizer = model.configure_optimizers(WEIGHT_DECAY, LEARNING_RATE, (BETA1, BETA2), device)
 
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -215,7 +218,15 @@ def train_model(use_lif=True, lif_mode='learnable', use_qwen_gate=False,
                     vals = [f"{v:.4f}" for v in param.tolist()]
                     print(f"  {name}: [{', '.join(vals)}]")
 
-    return history, best_val_loss, total_time
+    # Extract LIF parameters if applicable
+    lif_params = {}
+    if use_lif or use_temporal_lif or use_head_persistent:
+        lif_keywords = ['threshold', 'leak', 'steepness', 'refractory', 'cross_layer', 'temporal', 'head_persistence', 'head_boost']
+        for name, param in model.named_parameters():
+            if any(k in name for k in lif_keywords):
+                lif_params[name] = param.detach().cpu().tolist()
+
+    return history, best_val_loss, total_time, n_params, mode_str, lif_params
 
 
 def main():
@@ -258,7 +269,7 @@ def main():
         results = {}
         for name, use_lif, lif_mode, qwen, temporal, head_p in conditions:
             print(f"\n>>> Training {name}...")
-            hist, loss, t = train_model(
+            hist, loss, t, n_p, m_str, lif_p = train_model(
                 use_lif=use_lif, lif_mode=lif_mode, use_qwen_gate=qwen,
                 use_temporal_lif=temporal, use_head_persistent=head_p,
                 max_iters=args.iters, force_device=args.device,
@@ -283,12 +294,14 @@ def main():
         print("=" * 60)
 
         print("\n>>> Training Standard Attention (baseline)...")
-        hist_std, loss_std, time_std = train_model(use_lif=False, max_iters=args.iters,
-                                                    force_device=args.device, seed=args.seed)
+        hist_std, loss_std, time_std, n_params_std, _, _ = train_model(
+            use_lif=False, max_iters=args.iters,
+            force_device=args.device, seed=args.seed)
 
         print("\n>>> Training LIF Attention...")
-        hist_lif, loss_lif, time_lif = train_model(use_lif=True, max_iters=args.iters,
-                                                    force_device=args.device, seed=args.seed)
+        hist_lif, loss_lif, time_lif, n_params_lif, _, lif_params = train_model(
+            use_lif=True, max_iters=args.iters,
+            force_device=args.device, seed=args.seed)
 
         print("\n" + "=" * 60)
         print("COMPARISON RESULTS")
@@ -303,6 +316,36 @@ def main():
             print("Standard wins. LIF needs tuning.")
         else:
             print("Tie!")
+
+        # Save results to JSON
+        results_dir = os.path.join(os.path.dirname(__file__), 'results')
+        os.makedirs(results_dir, exist_ok=True)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        results = []
+        for model_type, loss, t, n_params, hist in [
+            ('standard', loss_std, time_std, n_params_std, hist_std),
+            ('lif', loss_lif, time_lif, n_params_lif, hist_lif),
+        ]:
+            r = {
+                'model_type': model_type,
+                'seed': args.seed,
+                'n_params': n_params,
+                'best_val_loss': float(loss),
+                'total_time': t,
+                'config': {
+                    'n_layer': N_LAYER, 'n_head': N_HEAD, 'n_embd': N_EMBD,
+                    'block_size': BLOCK_SIZE, 'max_iters': args.iters,
+                    'dropout': DROPOUT, 'batch_size': BATCH_SIZE,
+                },
+                'history': hist,
+            }
+            if model_type == 'lif' and lif_params:
+                r['lif_params'] = lif_params
+            results.append(r)
+        results_file = os.path.join(results_dir, f"full_{timestamp}.json")
+        with open(results_file, 'w') as f:
+            json.dump(results, f, indent=2)
+        print(f"\nResults saved to: {results_file}")
     else:
         # Determine config from flags
         use_lif = not args.no_lif
@@ -314,12 +357,13 @@ def main():
         if use_qwen:
             use_lif = False
 
-        train_model(use_lif=use_lif, lif_mode=lif_mode,
-                    use_qwen_gate=use_qwen,
-                    use_temporal_lif=use_temporal,
-                    use_head_persistent=use_head_p,
-                    max_iters=args.iters, force_device=args.device,
-                    seed=args.seed)
+        hist, loss, t, n_p, m_str, lif_p = train_model(
+            use_lif=use_lif, lif_mode=lif_mode,
+            use_qwen_gate=use_qwen,
+            use_temporal_lif=use_temporal,
+            use_head_persistent=use_head_p,
+            max_iters=args.iters, force_device=args.device,
+            seed=args.seed)
 
 
 if __name__ == '__main__':
