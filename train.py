@@ -365,6 +365,30 @@ def main():
             max_iters=args.iters, force_device=args.device,
             seed=args.seed)
 
+        # Save results to JSON (single-condition mode)
+        results_dir = os.path.join(os.path.dirname(__file__), 'results')
+        os.makedirs(results_dir, exist_ok=True)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        r = {
+            'model_type': m_str.lower().replace(' ', '_') if m_str else 'unknown',
+            'seed': args.seed,
+            'n_params': n_p,
+            'best_val_loss': float(loss),
+            'total_time': t,
+            'config': {
+                'n_layer': N_LAYER, 'n_head': N_HEAD, 'n_embd': N_EMBD,
+                'block_size': BLOCK_SIZE, 'max_iters': args.iters,
+                'dropout': DROPOUT, 'batch_size': BATCH_SIZE,
+            },
+            'history': hist,
+        }
+        if lif_p:
+            r['lif_params'] = lif_p
+        results_file = os.path.join(results_dir, f"ei_{timestamp}.json")
+        with open(results_file, 'w') as f:
+            json.dump(r, f, indent=2)
+        print(f"\nResults saved to: {results_file}")
+
 
 if __name__ == '__main__':
     main()

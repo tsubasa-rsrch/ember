@@ -59,7 +59,7 @@ We introduce Ember, which augments standard architectures with Leaky Integrate-a
 Our key contributions:
 \begin{enumerate}
     \item \textbf{Cross-modal regularization}: LIF acts as a stabilizer without loss penalty on text ($N{=}8$: $+0.01\%$, $p = 0.972$; variance $1.2\times$ reduction) and prevents catastrophic seed-dependent failures on audio (\S\ref{sec:text-results}--\ref{sec:seed1337}).
-    \item \textbf{Spontaneous E/I balance}: Combining LIF with inhibitory mechanisms achieves $-0.79\%$ with seed-invariant critical periods (\S\ref{sec:ei-balance}--\ref{sec:critical-period}).
+    \item \textbf{Spontaneous E/I balance}: Combining LIF with inhibitory mechanisms achieves $-0.45\%$ ($N{=}7$, $d{=}-0.58$) with seed-invariant critical periods (\S\ref{sec:ei-balance}--\ref{sec:critical-period}).
     \item \textbf{Architecture selectivity}: LIF regularizes Transformers (scale-dependent) but not text CfC, paralleling thalamic gating of cortical but not cerebellar processing (\S\ref{sec:cross-arch}).
     \item \textbf{Width U-curve}: Critical threshold between 256d--320d (\S\ref{sec:width}).
     \item \textbf{In silico neuroanatomy}: LIF-gated networks provide a controlled experimental system where biological motifs can be inserted, removed, or replaced (e.g., SigmoidGate control), enabling causal experiments impossible in living tissue (\S\ref{sec:controls},~\S\ref{sec:neuroanatomy}).
@@ -121,22 +121,22 @@ where $\sigma$ is the sigmoid function, $\theta$ is the learnable threshold (ini
 
 \begin{table}[h]
 \centering
-\caption{Base-scale Transformer ablation (6L/6H/384d, $\sim$10.65M params, block\_size=256, 5000 iters). Standard vs LIF: $N{=}8$ seeds. E/I conditions: $N{=}3$ seeds (see Appendix Table~\ref{tab:ei-balance}).}
+\caption{Base-scale Transformer ablation (6L/6H/384d, $\sim$10.65M params, block\_size=256, 5000 iters). Standard vs LIF: $N{=}8$ seeds. E/I conditions: $N{=}7$ seeds (see Appendix Table~\ref{tab:ei-balance}).}
 \label{tab:full-ablation}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Condition} & \textbf{Val Loss} & \textbf{$\Delta$} & \textbf{Seeds Won} & \textbf{$N$} \\
 \midrule
-Standard (baseline) & $1.4820 \pm 0.0159$ & --- & --- & 8 \\
+Standard (baseline) & $1.4833 \pm 0.0168$ & --- & --- & 7 \\
 + LIF gate only & $1.4822 \pm 0.0130$ & $+0.01\%$ & $4/8$ & 8 \\
-+ LIF + Refrac + Head & $1.4667 \pm 0.0012$ & $-1.03\%^\dagger$ & $3/3$ & 3 \\
++ Head-persist only & $1.4844 \pm 0.0213$ & $+0.07\%$ & $4/7$ & 7 \\
++ LIF + Refrac + Head & $1.4765 \pm 0.0140$ & $-0.45\%$ & $5/7$ & 7 \\
 \bottomrule
-\multicolumn{5}{l}{\footnotesize $N{=}8$ paired $t$: $t = 0.04$, $p = 0.972$; Cohen's $d = 0.01$. Var ratio: $1.2\times$.} \\
-\multicolumn{5}{l}{\footnotesize $^\dagger$Relative to $N{=}8$ Standard mean; 3-seed E/I result pending $N{\geq}8$ validation.} \\
+\multicolumn{5}{l}{\footnotesize LIF-only ($N{=}8$): $t = 0.04$, $p = 0.972$, $d = 0.01$. Refrac+Head ($N{=}7$): $t = -1.53$, $p = 0.177$, $d = -0.58$.} \\
 \end{tabular}
 \end{table}
 
-At base scale ($N{=}8$), LIF produces \textbf{no significant loss change} ($+0.01\%$, $p = 0.972$, Cohen's $d = 0.01$), with LIF winning exactly half the seeds (4/8). The initial 3-seed result ($-0.75\%$) was driven by seed 42 (a $-1.43\%$ outlier); the full 8-seed distribution is symmetric around zero. LIF does reduce variance ($1.2\times$: std $0.0159 \to 0.0130$), consistent with its role as a stabilizer. When combined with inhibitory mechanisms (Refractory + Head-persistence), LIF achieves $-1.03\%$ relative to the 8-seed baseline, though this E/I result is from 3 seeds and requires $N{\geq}8$ validation (\S\ref{sec:ei-balance}).
+At base scale ($N{=}8$), LIF produces \textbf{no significant loss change} ($+0.01\%$, $p = 0.972$, Cohen's $d = 0.01$), with LIF winning exactly half the seeds (4/8). The initial 3-seed result ($-0.75\%$) was driven by seed 42 (a $-1.43\%$ outlier); the full 8-seed distribution is symmetric around zero. LIF does reduce variance ($1.2\times$: std $0.0159 \to 0.0130$), consistent with its role as a stabilizer. When combined with inhibitory mechanisms (Refractory + Head-persistence), LIF achieves $-0.45\%$ ($N{=}7$, $p = 0.177$, $d = -0.58$), winning 5/7 seeds with variance reduction to $0.69\times$ (\S\ref{sec:ei-balance}). Head-persistence alone shows no effect ($+0.07\%$, $p = 0.822$), confirming that E/I \emph{balance}---not inhibition alone---drives the improvement.
 
 \textbf{Scale dependence.} The LIF effect is strongly scale-dependent. An 8-seed ablation at XS scale (2L/4H/128d) reaches significance: paired $t$-test $t = 2.87$, $p = 0.024$; Wilcoxon $W = 3.0$, $p = 0.039$; Cohen's $d = -1.02$; LIF wins 7/8 seeds. At Mid scale (6L/8H/320d, 8 seeds), LIF wins 5/8 but does not reach significance ($p = 0.235$, Cohen's $d = 0.46$). At base scale, the effect vanishes entirely ($p = 0.972$). This progression---strong at XS, moderate at Mid, null at base---reveals that LIF's loss improvement effect diminishes with scale, while its organizational effects (head specialization, E/I balance) persist. The SigmoidGate control (\S\ref{sec:controls}) adds nuance: at Wide scale, biological gate structure produces $10\times$ stronger regularization than smooth gating, suggesting the structural benefit persists even when mean loss improvement does not.
 
@@ -201,7 +201,7 @@ The LIF effect traces a \textbf{U-shaped curve} across 5 Transformer scales in t
 \label{sec:critical-period}
 \label{sec:ei-balance}
 
-At iteration $\sim$1600 ($\sim$53\% of training), LIF Transformers undergo a sharp transition: thresholds stabilize, head roles differentiate, and depth organization emerges. This timing is robust across seeds, paralleling biological critical periods \cite{hensch2005critical}: both are triggered by E/I balance maturation, endogenously timed, and produce selective circuit strengthening. Combining LIF (excitatory) with refractory+head-persistence (inhibitory) yields optimal $-0.79\%$ ($1.4667 \pm 0.0012$); inhibitory mechanisms alone degrade performance (Appendix Table~\ref{tab:ei-balance}, Figure~\ref{fig:ei}). Post-critical-period, heads differentiate into pointer/gatherer/focuser roles with $\sim$25\% ``gatekeepers'' per layer (Appendix Figure~\ref{fig:head-params}), paralleling cortical inhibitory interneuron proportions.
+At iteration $\sim$1600 ($\sim$53\% of training), LIF Transformers undergo a sharp transition: thresholds stabilize, head roles differentiate, and depth organization emerges. This timing is robust across seeds, paralleling biological critical periods \cite{hensch2005critical}: both are triggered by E/I balance maturation, endogenously timed, and produce selective circuit strengthening. Combining LIF (excitatory) with refractory+head-persistence (inhibitory) yields $-0.45\%$ ($N{=}7$, $p = 0.177$, Cohen's $d = -0.58$); head-persistence alone shows no improvement ($+0.07\%$, $p = 0.822$), confirming that E/I \emph{balance} is required (Appendix Table~\ref{tab:ei-balance}, Figure~\ref{fig:ei}). The medium effect size ($d = -0.58$) with enhanced variance reduction ($0.69\times$) suggests E/I balance strengthens LIF's stabilizer role. Post-critical-period, heads differentiate into pointer/gatherer/focuser roles with $\sim$25\% ``gatekeepers'' per layer (Appendix Figure~\ref{fig:head-params}), paralleling cortical inhibitory interneuron proportions.
 
 
 % ============================================================
@@ -220,7 +220,7 @@ The thalamus gates cortical (parallel) but not cerebellar (sequential) processin
 
 \subsection{Limitations}
 
-\textbf{Base-scale null result}: The $N{=}8$ ablation shows no significant loss improvement at base scale ($p = 0.972$). The initial 3-seed result ($-0.75\%$) did not replicate. \textbf{Statistical power}: XS 8-seed reaches significance ($p = 0.024$), but Mid ($p = 0.235$), Audio ($p = 0.170$), and Base ($p = 0.972$) do not. E/I balance result ($-0.79\%$) is from 3 seeds and requires $N{\geq}8$ validation. \textbf{Tasks}: One text and one audio task; vision, multi-task, and continuous speech untested. \textbf{Controls}: SigmoidGate tested at 3 scales ($N{=}3$). \textbf{CfC}: Text null result may be task-specific. \textbf{Seed 1337}: Single-seed case study. \textbf{Analogies}: We claim functional correspondence, not structural equivalence.
+\textbf{Base-scale null result}: The $N{=}8$ ablation shows no significant loss improvement at base scale ($p = 0.972$). The initial 3-seed result ($-0.75\%$) did not replicate. \textbf{Statistical power}: XS 8-seed reaches significance ($p = 0.024$), but Mid ($p = 0.235$), Audio ($p = 0.170$), and Base ($p = 0.972$) do not. E/I balance ($N{=}7$) shows medium effect ($d = -0.58$, $p = 0.177$) but does not reach significance. \textbf{Tasks}: One text and one audio task; vision, multi-task, and continuous speech untested. \textbf{Controls}: SigmoidGate tested at 3 scales ($N{=}3$). \textbf{CfC}: Text null result may be task-specific. \textbf{Seed 1337}: Single-seed case study. \textbf{Analogies}: We claim functional correspondence, not structural equivalence.
 
 
 % ============================================================
@@ -239,7 +239,7 @@ Flat minima correlate with generalization \cite{hochreiter1997flat,keskar2017lar
 % ============================================================
 \section{Conclusion}
 
-LIF gating (24--144 parameters) produces two separable effects: \textbf{universal regularization}---variance reduction without loss penalty on text ($N{=}8$: $+0.01\%$, $p = 0.972$) and consistent floor-raising on audio---and \textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance. LIF regularizes Transformers (significant at small scales, stabilizing at larger scales) but not CfC text, paralleling thalamic gating of cortical but not cerebellar processing. The honest null result at base scale is itself a finding: LIF acts as a stabilizer, not an optimizer. The brain may spike not to save power or improve accuracy, but to \emph{organize and stabilize} parallel computation---and artificial networks, given the minimal constraint of a threshold gate, arrive at functionally similar solutions.
+LIF gating (24--144 parameters) produces two separable effects: \textbf{universal regularization}---variance reduction without loss penalty on text ($N{=}8$: $+0.01\%$, $p = 0.972$) and consistent floor-raising on audio---and \textbf{modality-dependent organization}---depth hierarchy, head specialization, and spontaneous E/I balance ($N{=}7$: $-0.45\%$, $d = -0.58$). LIF regularizes Transformers (significant at small scales, stabilizing at larger scales) but not CfC text, paralleling thalamic gating of cortical but not cerebellar processing. The honest null result at base scale is itself a finding: LIF acts as a stabilizer, not an optimizer. E/I balance strengthens this role: inhibition alone has no effect, but combined with LIF gating, it produces medium-effect improvement with enhanced variance reduction. The brain may spike not to save power or improve accuracy, but to \emph{organize and stabilize} parallel computation---and artificial networks, given the minimal constraint of a threshold gate, arrive at functionally similar solutions.
 
 
 % ============================================================
@@ -257,17 +257,17 @@ LIF gating (24--144 parameters) produces two separable effects: \textbf{universa
 
 \begin{table}[h]
 \centering
-\caption{v3.5 E/I balance results (6L/6H/384d, base scale, $N{=}3$). $\Delta$ relative to 3-seed Standard. The 3-seed Standard ($1.4784$) differs from the $N{=}8$ Standard ($1.4820 \pm 0.0159$); E/I results require $N{\geq}8$ replication.}
+\caption{v3.5 E/I balance results (6L/6H/384d, base scale, $N{=}7$). $\Delta$ relative to 7-seed Standard mean. Head-persist alone shows no improvement; only the combination with LIF gating produces consistent benefit, confirming E/I balance is required.}
 \label{tab:ei-balance}
-\begin{tabular}{lcc}
+\begin{tabular}{lccccc}
 \toprule
-\textbf{Condition} & \textbf{Val Loss} & \textbf{$\Delta$} \\
+\textbf{Condition} & \textbf{Val Loss} & \textbf{$\Delta$} & \textbf{Wins} & \textbf{$p$} & \textbf{$d$} \\
 \midrule
-Standard ($N{=}3$) & $1.4784 \pm 0.0104$ & --- \\
-+ LIF only ($N{=}3$) & $1.4673 \pm 0.0015$ & $-0.75\%$ \\
-+ Refrac + Head (no LIF) & $1.4810 \pm 0.0070$ & $+0.18\%$ \\
-+ \textbf{LIF + Refrac + Head} & $\mathbf{1.4667 \pm 0.0012}$ & $\mathbf{-0.79\%}$ \\
+Standard ($N{=}7$) & $1.4833 \pm 0.0168$ & --- & --- & --- & --- \\
++ Head-persist only & $1.4844 \pm 0.0213$ & $+0.07\%$ & $4/7$ & $0.822$ & $0.09$ \\
++ \textbf{LIF + Refrac + Head} & $\mathbf{1.4765 \pm 0.0140}$ & $\mathbf{-0.45\%}$ & $\mathbf{5/7}$ & $0.177$ & $-0.58$ \\
 \bottomrule
+\multicolumn{6}{l}{\footnotesize Var ratio: HP $1.62\times$ (increased), RH $0.69\times$ (reduced). Paired $t$-tests.} \\
 \end{tabular}
 \end{table}
 
@@ -371,7 +371,7 @@ CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/fig6_ei_balance.png}
-\caption{\textbf{v3.5 E/I balance.} Mean val\_loss with error bars for key conditions. Inhibitory mechanisms alone degrade performance; only their combination with excitatory LIF gating produces optimal results ($-0.79\%$). This parallels the biological requirement for both E and I components in critical period opening \cite{hensch2005critical}.}
+\caption{\textbf{v3.5 E/I balance ($N{=}7$).} Head-persistence alone has no effect ($+0.07\%$, $p = 0.822$); combined with LIF gating, it achieves $-0.45\%$ ($p = 0.177$, $d = -0.58$) with enhanced variance reduction ($0.69\times$). This parallels the biological requirement for both E and I components in critical period opening \cite{hensch2005critical}.}
 \label{fig:ei}
 \end{figure}
 
