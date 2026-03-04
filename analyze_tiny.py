@@ -82,7 +82,7 @@ def print_cross_scale_table(groups):
     """Print a comprehensive cross-scale comparison table."""
     scales = sorted(set(k[0] for k in groups.keys()),
                     key=lambda s: {'xs': 0, 'small': 1, 'medium': 2, 'wide': 3, 'large': 4}.get(s, 99))
-    model_types = ['standard', 'lif', 'cfc']
+    model_types = ['standard', 'lif', 'cfc_base', 'cfc']
 
     print("\n" + "=" * 90)
     print("EMBER-TINY CROSS-SCALE COMPARISON")
@@ -160,17 +160,43 @@ def print_cross_scale_table(groups):
         print(f"{scale:<10} {n_params/1e6:.3f}M    {std_mean:.4f}±{std_std:.4f}  {lif_mean:.4f}±{lif_std:.4f}  {delta:+.3f}%   {wins}/{total}")
 
     # CfC summary if available
-    cfc_scales = [s for s in scales if (s, 'cfc') in groups]
+    cfc_scales = [s for s in scales if (s, 'cfc') in groups or (s, 'cfc_base') in groups]
     if cfc_scales:
-        print(f"\n--- CfC+LIF results ---")
+        print(f"\n--- CfC Architecture Comparison ---")
+        print(f"{'Scale':<8} {'CfC-only':<20} {'CfC+LIF':<20} {'Delta (LIF vs Base)':<22} {'vs Transformer'}")
+        print("-" * 90)
         for scale in cfc_scales:
-            cfc_runs = groups[(scale, 'cfc')]
-            cfc_vals = [r['best_val_loss'] for r in cfc_runs]
-            cfc_mean = np.mean(cfc_vals)
-            n_params = cfc_runs[0]['n_params']
+            base_runs = groups.get((scale, 'cfc_base'), [])
+            lif_runs = groups.get((scale, 'cfc'), [])
             std_mean = np.mean([r['best_val_loss'] for r in groups.get((scale, 'standard'), [])]) if (scale, 'standard') in groups else None
-            delta_str = f"{(cfc_mean - std_mean) / std_mean * 100:+.3f}%" if std_mean else "N/A"
-            print(f"  {scale}: {cfc_mean:.4f} ({n_params/1e6:.3f}M) vs Standard: {delta_str}")
+
+            base_str = f"{np.mean([r['best_val_loss'] for r in base_runs]):.4f}±{np.std([r['best_val_loss'] for r in base_runs]):.4f}" if base_runs else "N/A"
+            lif_str = f"{np.mean([r['best_val_loss'] for r in lif_runs]):.4f}±{np.std([r['best_val_loss'] for r in lif_runs]):.4f}" if lif_runs else "N/A"
+
+            if base_runs and lif_runs:
+                base_mean = np.mean([r['best_val_loss'] for r in base_runs])
+                lif_mean = np.mean([r['best_val_loss'] for r in lif_runs])
+                delta = (lif_mean - base_mean) / base_mean * 100
+                delta_str = f"{delta:+.3f}% ({'✓LIF wins' if delta < 0 else '✗LIF loses'})"
+                vs_trans = f"{(lif_mean - std_mean) / std_mean * 100:+.3f}%" if std_mean else "N/A"
+            else:
+                delta_str = "incomplete"
+                vs_trans = "N/A"
+
+            print(f"  {scale:<6}  {base_str:<20} {lif_str:<20} {delta_str:<22} {vs_trans}")
+
+        # Architecture independence check
+        print(f"\n--- Architecture Independence (Paper 1 claim) ---")
+        for scale in cfc_scales:
+            base_runs = groups.get((scale, 'cfc_base'), [])
+            lif_runs = groups.get((scale, 'cfc'), [])
+            trans_std = groups.get((scale, 'standard'), [])
+            trans_lif = groups.get((scale, 'lif'), [])
+            if base_runs and lif_runs and trans_std and trans_lif:
+                cfc_delta = (np.mean([r['best_val_loss'] for r in lif_runs]) - np.mean([r['best_val_loss'] for r in base_runs])) / np.mean([r['best_val_loss'] for r in base_runs]) * 100
+                trans_delta = (np.mean([r['best_val_loss'] for r in trans_lif]) - np.mean([r['best_val_loss'] for r in trans_std])) / np.mean([r['best_val_loss'] for r in trans_std]) * 100
+                both_improve = cfc_delta < 0 and trans_delta < 0
+                print(f"  {scale}: Transformer {trans_delta:+.3f}% | CfC {cfc_delta:+.3f}% => {'✓ BOTH ARCHITECTURES IMPROVE' if both_improve else '✗ mixed results'}")
 
 
 if __name__ == '__main__':
