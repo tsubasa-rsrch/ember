@@ -279,7 +279,7 @@ Combining Transformer and CfC results across scales reveals a striking pattern: 
 | CfC | XS (2L/192u/128d) | 0.55M | 1.6375 | 1.6392 | +0.10% |
 | CfC | Wide (4L/512u/384d) | 8.95M | 1.4851 | 1.4852 | **+0.01%** |
 
-The pattern is unambiguous: LIF improves Transformers at every scale tested (-0.10% to -0.75%), while having zero effect on CfC at any scale (+0.01% to +0.10%). This is not a scaling artifact — the wide-scale comparison uses matched embedding dimensions (384d) and comparable parameter counts (10.7M vs 8.95M), isolating the backbone architecture as the sole variable.
+The pattern reveals an architecture×scale interaction: LIF improves Transformers at every scale tested (-0.10% to -0.75%), while showing limited, scale-dependent effects on CfC (+0.10% at xs, **-0.06%** at medium, +0.01% at wide). Critically, even the medium-scale CfC improvement (-0.06%) is 4× smaller than the equivalent Transformer improvement at comparable parameters (-0.26%), and does not appear at other scales. This is not a scaling artifact — the wide-scale comparison uses matched embedding dimensions (384d) and comparable parameter counts (10.7M vs 8.95M), isolating backbone architecture as the primary variable.
 
 **Why does LIF help Transformers but not CfC?** The key distinction is *parallel vs sequential* information processing:
 
@@ -367,7 +367,7 @@ The v3.5 result is critical evidence: biological critical periods require *both*
 
 ### 6.3 Why Small Loss Delta, Large Organizational Impact?
 
-The validation loss improvements are modest (-0.75% for Transformer) and absent for CfC (+0.01%). However, the primary claim is not about performance but about *structure* and *differential effectiveness*. The emergence of:
+The validation loss improvements are modest (-0.75% for Transformer) and limited for CfC (+0.01% at wide, -0.06% at medium). However, the primary claim is not about performance but about *structure* and *differential effectiveness*. The emergence of:
 - Functional head roles (pointer/gatherer/focuser) — absent in Standard
 - Progressive depth hierarchy — absent in Standard
 - 7× variance reduction across seeds — a regularization effect
@@ -388,13 +388,13 @@ The cross-architecture results (Section 3.8) reveal a correspondence between LIF
 | Brain structure | Processes | Thalamic gating | Ember analogy |
 |---|---|---|---|
 | **Cerebral cortex** | Parallel, associative | Thalamus filters input | LIF gates Transformer attention |
-| **Cerebellum** | Sequential, predictive | No thalamic relay | LIF has no effect on CfC |
+| **Cerebellum** | Sequential, predictive | No thalamic relay | LIF shows limited, scale-dependent effects on CfC |
 
 The **thalamus** serves as the brain's primary sensory gateway, filtering which signals reach cortical processing areas. Critically, the cerebellum — which processes sequential motor and predictive computations — receives input directly from the brainstem and spinal cord, *bypassing* the thalamic filter entirely (Schmahmann & Pandya, 1997). The thalamus gates the cortex but not the cerebellum.
 
-LIF gating recapitulates this pattern: it effectively filters Transformer attention (parallel, associative, cortex-like) but has no effect on CfC dynamics (sequential, predictive, cerebellum-like). We did not design LIF to mimic the thalamus — we simply applied a threshold-based gate at the same architectural position and tested whether it helped. The result is a case of **convergent functional architecture**: efficient information processing under threshold-based gating constraints converges on the same solution regardless of whether the system is biological or artificial.
+LIF gating recapitulates this pattern: it effectively filters Transformer attention (parallel, associative, cortex-like) but shows only limited, scale-dependent effects on CfC dynamics (sequential, predictive, cerebellum-like) — a weak improvement at medium scale (-0.06%) that is substantially smaller than equivalent Transformer gains at the same scale (-0.26%) and absent at xs and wide scales. We did not design LIF to mimic the thalamus — we simply applied a threshold-based gate at the same architectural position and tested whether it helped. The result is a case of **convergent functional architecture**: efficient information processing under threshold-based gating constraints converges on the same solution regardless of whether the system is biological or artificial.
 
-This finding strengthens the paper's central thesis: LIF gating is not a universal regularizer but an **attention-specific organizational mechanism** — precisely the role the thalamus plays in biological neural circuits. The negative CfC result is not a failure but the most informative data point, revealing *why* the brain uses thalamic gating for cortical but not cerebellar processing.
+This finding strengthens the paper's central thesis: LIF gating is not a universal regularizer but an **attention-specific organizational mechanism** — precisely the role the thalamus plays in biological neural circuits. The limited CfC result is not a failure but the most informative data point, revealing *why* the brain uses thalamic gating for cortical but not cerebellar processing: sequential ODE dynamics have their own internal filtering mechanism and do not benefit substantially from external threshold-based gating.
 
 ### 6.5 Interpreting the Width Threshold
 
@@ -428,7 +428,7 @@ The cross-scale results (Section 3.7) reveal a non-trivial interaction between L
 - **Entropy analysis**: Current measurements use checkpoint-based methods rather than controlled probing.
 - **4E interpretation**: Our mapping to 4E cognition is interpretive, not mechanistic. We argue for *compatibility* with the framework, not proof of enactive cognition in neural networks.
 - **Width threshold granularity**: Our 5-point sweep (128d, 192d, 256d, 320d, 384d) localizes the crossover between 256d and 320d. Even finer sweeps (e.g., 288d) could pinpoint the exact threshold, and theoretical analysis connecting minimum redundancy to LIF filter width remains open.
-- **CfC scale coverage**: CfC experiments cover two scales (xs, wide). Intermediate scales and larger CfC models remain untested, though the consistency of the null result across both tested scales supports the architectural interpretation.
+- **CfC scale coverage**: CfC experiments now cover three scales (xs, medium, wide). The medium scale (4L/256d) shows a weak improvement (-0.06%) that contrasts with the null/negative results at xs (+0.10%) and wide (+0.01%). This scale-dependent pattern — and its contrast with consistently larger Transformer improvements — strengthens the architecture×scale interaction hypothesis, but larger CfC models remain untested.
 - **Neuroanatomical analogy**: The thalamus-cortex/cerebellum mapping is suggestive, not mechanistic. We claim functional correspondence, not structural equivalence.
 
 ### 6.7 Future Work
@@ -445,7 +445,7 @@ The cross-scale results (Section 3.7) reveal a non-trivial interaction between L
 
 We introduced LIF gating, a minimal biologically-inspired mechanism that adds threshold-based selective filtering to standard neural architectures. Despite its extreme simplicity (108 parameters), LIF gating induces rich organizational structure in Transformer networks: progressive depth hierarchy, functional head specialization, seed-invariant critical periods, and spontaneous excitatory-inhibitory balance.
 
-Crucially, LIF gating is **not** universal — it consistently improves Transformer attention but has zero effect on CfC sequential dynamics. This architecture-dependent pattern recapitulates brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing. We did not design this correspondence — it emerged from simply asking "does a threshold-based gate help?" across two architectures.
+Crucially, LIF gating is **not** universal — it consistently improves Transformer attention while showing limited, scale-dependent effects on CfC sequential dynamics (weakly positive at one intermediate scale, absent elsewhere). This architecture×scale interaction recapitulates brain neuroanatomy: the thalamus gates cortical (parallel) but not cerebellar (sequential) processing. We did not design this correspondence — it emerged from simply asking "does a threshold-based gate help?" across two architectures.
 
 Interpreted through the 4E cognition framework, this convergent functional architecture suggests that efficient information processing under threshold-based gating constraints converges on the same organizational solution regardless of substrate. The brain may spike not to save power, but to organize parallel computation — and artificial networks independently discover the same principle.
 
