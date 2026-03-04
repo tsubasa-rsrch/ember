@@ -183,7 +183,7 @@ The LIF effect traces a \textbf{U-shaped curve} across 5 Transformer scales in t
     \item \textbf{Large width (320d+)}: LIF recovers ($-0.18\%$ at 320d, $-0.11\%$ at 384d). Representational redundancy emerges; LIF acts as a regularizer by filtering excess capacity.
 \end{enumerate}
 
-The critical crossover lies between 256d and 320d (Figure~\ref{fig:ucurve}), where the network transitions from ``all dimensions needed'' to ``redundancy exists.'' The base-scale 8-seed result ($+0.01\%$, Table~\ref{tab:full-ablation}) suggests the loss improvement plateaus at larger scale, while organizational effects persist.
+The critical crossover lies between 256d and 320d (Figure~\ref{fig:ucurve}), where the network transitions from ``all dimensions needed'' to ``redundancy exists.'' The base-scale 8-seed result ($+0.01\%$, Table~\ref{tab:full-ablation}) suggests the loss improvement plateaus at larger scale, while organizational effects persist. Mechanistic analysis of per-head LIF parameters reveals that threshold standard deviation decreases monotonically with width ($\sigma_\theta = 0.031$ at 128d to $0.016$ at 384d; Appendix Figure~\ref{fig:lif-pca-width}), suggesting that wider models develop lower head-level diversity---consistent with redundant representations that LIF can selectively prune.
 
 \begin{figure}[t]
 \centering
@@ -395,6 +395,25 @@ CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
 \includegraphics[width=\textwidth]{figures/u_curve_analysis.png}
 \caption{\textbf{Width U-curve detailed analysis (4-panel).} Top-left: $\Delta$\% across 5 scales with 95\% CI, showing the U-shaped dependence with critical crossover between 256d--320d. Top-right: Cohen's $d$ effect size per scale. Bottom-left: statistical significance ($p$-values, dashed line at $\alpha = 0.05$). Bottom-right: per-seed $\Delta$ distributions. Three regimes emerge: \emph{constrained} (128d, LIF helps by filtering redundant flow), \emph{all-needed} (192--256d, LIF harms by removing useful dimensions), and \emph{redundant} (320d+, LIF helps as regularizer). See \S\ref{sec:width}.}
 \label{fig:ucurve-detail}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/lif_pca_width}
+\caption{\textbf{LIF gating mechanistic analysis across scales (4-panel).}
+(A)~Effective threshold distribution per scale (violin). Threshold standard
+deviation decreases monotonically with width ($\sigma_\theta = 0.031$ at 128d
+to $0.016$ at 384d), indicating reduced head-level diversity at wider scales.
+(B)~PCA of per-head LIF parameters (threshold, leak, steepness) colored by scale.
+Scales cluster along PC1, reflecting width-dependent parameter geometry.
+(C)~Layer-wise mean effective threshold heatmap across scales.
+(D)~U-curve $\Delta$\% (bars, green = LIF better) overlaid with threshold std
+(orange line), revealing the mechanistic link: lower threshold diversity
+correlates with reduced LIF efficacy in the medium regime (192--256d) and
+recovery at wide scales (320d+) where representational redundancy allows
+selective gating to re-emerge. Critical zone 256d--320d marked.
+See \S\ref{sec:width}.}
+\label{fig:lif-pca-width}
 \end{figure}
 
 \bibliography{references}
