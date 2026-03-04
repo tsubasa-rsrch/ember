@@ -268,7 +268,7 @@ Where LIF hurts (Medium, 256d), variance *increases* (0.0022 → 0.0037, +68%). 
 
 ### 3.8 Cross-Architecture Analysis: Transformer vs CfC
 
-Combining Transformer and CfC results across scales reveals a striking pattern: **LIF effectiveness depends on architecture, not scale** (Figure 10).
+Combining Transformer and CfC results across scales reveals a striking pattern of **architecture×scale interaction** (Figure 10).
 
 | Architecture | Scale | Params | Standard | +LIF | LIF Δ |
 |---|---|---|---|---|---|
@@ -276,11 +276,11 @@ Combining Transformer and CfC results across scales reveals a striking pattern: 
 | Transformer | Mid (6L/8H/320d) | 7.44M | 1.4739 | 1.4700 | **-0.26%** |
 | Transformer | Wide (6L/8H/384d) | 10.7M | 1.4862 | 1.4845 | **-0.12%** |
 | Transformer | Full (6L/12H/768d) | 10.6M | 1.4784 | 1.4673 | **-0.75%** |
-| CfC | XS (2L/192u/128d) | 0.55M | 1.6375 | 1.6392 | +0.10% |
-| CfC | Medium (4L/384u/256d) | 4.34M | 1.4813 | 1.4804 | **-0.06%** ✓ |
-| CfC | Wide (4L/512u/384d) | 8.95M | 1.4851 | 1.4852 | **+0.01%** |
+| CfC | XS (2L/192u/128d) | 0.55M | 1.6375 ± 0.0037 | 1.6392 ± 0.0035 | +0.10% (3 seeds) |
+| CfC | Medium (4L/384u/256d) | 4.34M | 1.4813 ± 0.0042 | 1.4804 ± 0.0042 | **-0.06%** (3 seeds) |
+| CfC | Wide (4L/512u/384d) | 8.95M | 1.4851 ± 0.0014 | 1.4852 ± 0.0024 | +0.01% (3 seeds) |
 
-The pattern reveals an architecture×scale interaction: LIF improves Transformers at every scale tested (-0.10% to -0.75%), while showing limited, scale-dependent effects on CfC (+0.10% at xs, **-0.06%** at medium, +0.01% at wide). Critically, even the medium-scale CfC improvement (-0.06%) is 4× smaller than the equivalent Transformer improvement at comparable parameters (-0.26%), and does not appear at other scales. This is not a scaling artifact — the wide-scale comparison uses matched embedding dimensions (384d) and comparable parameter counts (10.7M vs 8.95M), isolating backbone architecture as the primary variable.
+The pattern reveals an architecture×scale interaction: LIF improves Transformers at every scale tested (-0.10% to -0.75%), while showing limited, scale-dependent effects on CfC (+0.10% at xs, **-0.06%** at medium, +0.01% at wide). The clearest architecture-controlled comparison is at wide scale: matched embedding dimensions (384d) and similar parameter counts (Transformer 10.7M vs CfC 8.95M) yield divergent outcomes (-0.12% vs +0.01%). The CfC medium data point (-0.06%) is noteworthy — smaller in magnitude than any Transformer improvement and within the noise range of CfC xs/wide results — but the parameter counts are not matched (Transformer mid: 7.44M vs CfC medium: 4.34M), limiting direct comparison. Together, the evidence suggests an architecture-driven asymmetry, with scale as a secondary modulator within each architecture.
 
 **Why does LIF help Transformers but not CfC?** The key distinction is *parallel vs sequential* information processing:
 
