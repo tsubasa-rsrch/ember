@@ -277,6 +277,7 @@ Combining Transformer and CfC results across scales reveals a striking pattern: 
 | Transformer | Wide (6L/8H/384d) | 10.7M | 1.4862 | 1.4845 | **-0.12%** |
 | Transformer | Full (6L/12H/768d) | 10.6M | 1.4784 | 1.4673 | **-0.75%** |
 | CfC | XS (2L/192u/128d) | 0.55M | 1.6375 | 1.6392 | +0.10% |
+| CfC | Medium (4L/384u/256d) | 4.34M | 1.4813 | 1.4804 | **-0.06%** ✓ |
 | CfC | Wide (4L/512u/384d) | 8.95M | 1.4851 | 1.4852 | **+0.01%** |
 
 The pattern reveals an architecture×scale interaction: LIF improves Transformers at every scale tested (-0.10% to -0.75%), while showing limited, scale-dependent effects on CfC (+0.10% at xs, **-0.06%** at medium, +0.01% at wide). Critically, even the medium-scale CfC improvement (-0.06%) is 4× smaller than the equivalent Transformer improvement at comparable parameters (-0.26%), and does not appear at other scales. This is not a scaling artifact — the wide-scale comparison uses matched embedding dimensions (384d) and comparable parameter counts (10.7M vs 8.95M), isolating backbone architecture as the primary variable.
@@ -482,7 +483,7 @@ Interpreted through the 4E cognition framework, this convergent functional archi
 - **Figure 7**: Architecture diagram — LIF gate position in Transformer Ember (post-softmax, before c_proj) and Liquid Ember/CfC (post-hidden state, before residual), with parameter counts (Section 2)
 - **Figure 8**: Cross-scale training curves — 4-panel plot (xs/small/medium/wide) showing Standard vs LIF validation loss over 3000 iterations, 3 seeds each (Section 3.7)
 - **Figure 9**: Cross-scale LIF delta — LIF-Standard gap over training iterations for all 4 scales, showing U-shaped width dependence (Section 3.7)
-- **Figure 10**: Cross-architecture heatmap — 2×2 matrix (Transformer/CfC × XS/Wide) showing LIF effect (%), with neuroanatomical correspondence diagram: thalamus→cortex (LIF→Transformer, effective) vs cerebellum bypass (CfC, no effect) (Section 3.8)
+- **Figure 10**: Cross-architecture heatmap — 2×3 matrix (Transformer/CfC × XS/Medium/Wide) showing LIF effect (%), with neuroanatomical correspondence diagram: thalamus→cortex (LIF→Transformer, consistent) vs cerebellum (CfC, limited scale-dependent) (Section 3.8)
 
 ---
 
