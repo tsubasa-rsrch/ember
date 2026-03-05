@@ -175,11 +175,12 @@ Across all conditions, LIF leaves mean performance unchanged while modestly redu
 \subsection{Width Dependence}
 \label{sec:width}
 
-The LIF effect traces a \textbf{U-shaped curve} across 5 Transformer scales in the width sweep (Appendix Table~\ref{tab:cross-scale}; Figure~\ref{fig:ucurve}). Extended-seed analysis (8 seeds at XS and Mid, 3 seeds at Small/Medium/Wide) reveals three regimes:
+The LIF effect traces a \textbf{U-shaped curve} across 5 Transformer scales in the width sweep (Appendix Table~\ref{tab:cross-scale}; Figure~\ref{fig:ucurve}). Extended-seed analysis (8 seeds at XS and Mid, 7 seeds at Small, 3 seeds at Medium/Wide) reveals a gradual crossover across three regimes:
 
 \begin{enumerate}
     \item \textbf{Small width (128d)}: LIF helps ($-0.068\%$, $p = 0.024$, $d = -1.02$, $N{=}8$). The model is capacity-constrained; LIF's selective gating filters redundant attention flow, acting as a beneficial bottleneck.
-    \item \textbf{Medium width (192--256d)}: LIF hurts ($+0.15\%$ to $+0.36\%$). All embedding dimensions carry useful information; gating removes signal the model still needs.
+    \item \textbf{Transitional width (192d)}: No detectable effect ($-0.023\%$, $p = 0.868$, $d = -0.071$, $N{=}7$). At 192d, the network sits at the crossover boundary: neither capacity-constrained nor redundant. This null result anchors the crossover region empirically.
+    \item \textbf{All-needed width (256d)}: LIF hurts ($+0.355\%$, $p = 0.078$, $d = +1.95$, $N{=}3$). All embedding dimensions carry useful information; gating removes signal the model still needs.
     \item \textbf{Large width (320d+)}: LIF recovers ($-0.18\%$ at 320d, $-0.11\%$ at 384d). Representational redundancy emerges; LIF acts as a regularizer by filtering excess capacity.
 \end{enumerate}
 
@@ -281,14 +282,14 @@ Standard ($N{=}7$) & $1.4833 \pm 0.0168$ & --- & --- & --- & --- \\
 
 \begin{table}[h]
 \centering
-\caption{Width sweep: LIF effectiveness across 5 Transformer scales (block\_size=128, 3000 iters). $^\dagger$8-seed extended ablation; others 3-seed. Base-scale result (6L/6H/384d) in Table~\ref{tab:full-ablation} uses different training setup.}
+\caption{Width sweep: LIF effectiveness across 5 Transformer scales (block\_size=128, 3000 iters). $^\dagger$8-seed extended ablation; Small 7-seed extended ablation; Medium/Wide 3-seed. Base-scale result (6L/6H/384d) in Table~\ref{tab:full-ablation} uses different training setup.}
 \label{tab:cross-scale}
 \begin{tabular}{lccccccc}
 \toprule
 \textbf{Scale} & \textbf{Config} & \textbf{$N$} & \textbf{$\Delta$} & \textbf{$p$} & \textbf{$d$} & \textbf{Regime} \\
 \midrule
 XS$^\dagger$ & 2L/4H/128d & 8 & $-0.068\%$ & $0.024$ & $-1.02$ & Constrained \\
-Small & 4L/4H/192d & 3 & $+0.153\%$ & $0.660$ & $+0.29$ & All-needed \\
+Small & 4L/4H/192d & 7 & $-0.023\%$ & $0.868$ & $-0.071$ & Neutral \\
 Medium & 6L/8H/256d & 3 & $+0.355\%$ & $0.078$ & $+1.95$ & All-needed \\
 Mid$^\dagger$ & 6L/8H/320d & 8 & $-0.178\%$ & $0.235$ & $-0.46$ & Redundant \\
 Wide & 6L/8H/384d & 3 & $-0.113\%$ & $0.728$ & $-0.23$ & Redundant \\
@@ -393,7 +394,7 @@ CfC (text) & Wide (384d) & 1.4851 & 1.4852 & $+0.01\%$ \\
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{figures/u_curve_analysis.png}
-\caption{\textbf{Width U-curve detailed analysis (4-panel).} Top-left: $\Delta$\% across 5 scales with 95\% CI, showing the U-shaped dependence with critical crossover between 256d--320d. Top-right: Cohen's $d$ effect size per scale. Bottom-left: statistical significance ($p$-values, dashed line at $\alpha = 0.05$). Bottom-right: per-seed $\Delta$ distributions. Three regimes emerge: \emph{constrained} (128d, LIF helps by filtering redundant flow), \emph{all-needed} (192--256d, LIF harms by removing useful dimensions), and \emph{redundant} (320d+, LIF helps as regularizer). See \S\ref{sec:width}.}
+\caption{\textbf{Width U-curve detailed analysis (4-panel).} Top-left: $\Delta$\% across 5 scales with 95\% CI, showing the U-shaped dependence with critical crossover between 256d--320d. Top-right: Cohen's $d$ effect size per scale. Bottom-left: statistical significance ($p$-values, dashed line at $\alpha = 0.05$). Bottom-right: per-seed $\Delta$ distributions. Four regimes emerge: \emph{constrained} (128d, LIF helps by filtering redundant flow), \emph{neutral} (192d, no detectable effect at the crossover boundary), \emph{all-needed} (256d, LIF harms by removing useful dimensions), and \emph{redundant} (320d+, LIF helps as regularizer). See \S\ref{sec:width}.}
 \label{fig:ucurve-detail}
 \end{figure}
 
